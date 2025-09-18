@@ -1,59 +1,68 @@
-/*
-signUp() 모킹 함수 사용
-API 연동 시 :
-  - axois ~ 로 호출
-  - 서버 응답에 따라 가입 성공/실패 처리
-*/
+// SignUp.js
+// 회원가입 화면
+// 👉 입력한 데이터(이메일, 비밀번호, 이름 등)를 AuthService.signUp()으로 전달
+// 👉 성공 시 로그인 화면으로 이동
+
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  Alert,
-} from 'react-native';
-import { signUp } from './AuthService'; // 모킹용 회원가입
+import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
+import { signUp } from './AuthService';
 
 export default function SignUp({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [checkedPassword, setCheckedPassword] = useState('');
   const [name, setName] = useState('');
+  const [nickname, setNickname] = useState('');
+  const [birth, setBirth] = useState('');
+  const [phoneNum, setPhoneNum] = useState('');
 
-  const onSignUp = async () => {
-    if (!email || !password || !name) {
-      Alert.alert('알림', '모든 필드를 입력해주세요.');
+  const handleSignUp = async () => {
+    if (password !== checkedPassword) {
+      Alert.alert('비밀번호 불일치', '비밀번호와 확인 비밀번호가 다릅니다.');
       return;
     }
 
-    const result = await signUp(email, password, name); // 모킹용
+    const userData = {
+      email,
+      password,
+      checkedPassword,
+      name,
+      nickname,
+      birth,
+      phoneNum,
+    };
+    const result = await signUp(userData);
+
     if (result.success) {
-      Alert.alert('회원가입 완료', '이제 로그인 해주세요.');
-      navigation.replace('Login');
+      Alert.alert('회원가입 성공', '이제 로그인해주세요.');
+      navigation.navigate('Login');
     } else {
-      Alert.alert('회원가입 실패', result.message || '다시 시도해주세요.');
+      Alert.alert('회원가입 실패', result.message);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <Text style={styles.title}>회원가입</Text>
-
       <TextInput
         style={styles.input}
         placeholder="이메일"
         value={email}
         onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
       />
       <TextInput
         style={styles.input}
         placeholder="비밀번호"
         value={password}
-        onChangeText={setPassword}
         secureTextEntry
+        onChangeText={setPassword}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="비밀번호 확인"
+        value={checkedPassword}
+        secureTextEntry
+        onChangeText={setCheckedPassword}
       />
       <TextInput
         style={styles.input}
@@ -61,45 +70,31 @@ export default function SignUp({ navigation }) {
         value={name}
         onChangeText={setName}
       />
-
-      <TouchableOpacity style={styles.button} onPress={onSignUp}>
-        <Text style={styles.buttonText}>가입 완료</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => navigation.goBack()}>
-        <Text style={styles.linkText}>이미 계정이 있으신가요? 로그인</Text>
-      </TouchableOpacity>
-    </SafeAreaView>
+      <TextInput
+        style={styles.input}
+        placeholder="닉네임"
+        value={nickname}
+        onChangeText={setNickname}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="생년월일 (yyyymmdd)"
+        value={birth}
+        onChangeText={setBirth}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="전화번호"
+        value={phoneNum}
+        onChangeText={setPhoneNum}
+      />
+      <Button title="회원가입" onPress={handleSignUp} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, backgroundColor: '#fff' },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  input: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#bbb',
-    marginBottom: 16,
-    paddingVertical: 8,
-    fontSize: 16,
-  },
-  button: {
-    backgroundColor: '#000',
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  linkText: {
-    marginTop: 16,
-    fontSize: 14,
-    textAlign: 'center',
-    color: '#000',
-  },
+  container: { flex: 1, justifyContent: 'center', padding: 20 },
+  title: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
+  input: { borderWidth: 1, padding: 10, marginBottom: 10 },
 });
