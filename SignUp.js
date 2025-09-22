@@ -8,28 +8,28 @@ import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
 import { signUp } from './AuthService';
 
 export default function SignUp({ navigation }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [userEmail, setEmail] = useState('');
+  const [userPassword, setPassword] = useState('');
   const [checkedPassword, setCheckedPassword] = useState('');
-  const [name, setName] = useState('');
-  const [nickname, setNickname] = useState('');
-  const [birth, setBirth] = useState('');
-  const [phoneNum, setPhoneNum] = useState('');
+  const [userName, setName] = useState('');
+  const [userNickname, setNickname] = useState('');
+  const [userBirth, setBirth] = useState('');
+  const [userPhoneNumber, setPhoneNumber] = useState('');
 
   const handleSignUp = async () => {
-    if (password !== checkedPassword) {
+    if (userPassword !== checkedPassword) {
       Alert.alert('비밀번호 불일치', '비밀번호와 확인 비밀번호가 다릅니다.');
       return;
     }
 
     const userData = {
-      email,
-      password,
+      userEmail,
+      userPassword,
       checkedPassword,
-      name,
-      nickname,
-      birth,
-      phoneNum,
+      userName,
+      userNickname,
+      userBirth,
+      userPhoneNumber,
     };
     const result = await signUp(userData);
 
@@ -47,13 +47,13 @@ export default function SignUp({ navigation }) {
       <TextInput
         style={styles.input}
         placeholder="이메일"
-        value={email}
+        value={userEmail}
         onChangeText={setEmail}
       />
       <TextInput
         style={styles.input}
         placeholder="비밀번호"
-        value={password}
+        value={userPassword}
         secureTextEntry
         onChangeText={setPassword}
       />
@@ -67,26 +67,26 @@ export default function SignUp({ navigation }) {
       <TextInput
         style={styles.input}
         placeholder="이름"
-        value={name}
+        value={userName}
         onChangeText={setName}
       />
       <TextInput
         style={styles.input}
         placeholder="닉네임"
-        value={nickname}
+        value={userNickname}
         onChangeText={setNickname}
       />
       <TextInput
         style={styles.input}
         placeholder="생년월일 (yyyymmdd)"
-        value={birth}
+        value={userBirth}
         onChangeText={setBirth}
       />
       <TextInput
         style={styles.input}
         placeholder="전화번호"
-        value={phoneNum}
-        onChangeText={setPhoneNum}
+        value={userPhoneNumber}
+        onChangeText={setPhoneNumber}
       />
       <Button title="회원가입" onPress={handleSignUp} />
     </View>

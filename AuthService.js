@@ -5,7 +5,7 @@
 
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-const BASE_URL = 'http://172.30.1.72:8081'; // 추후 배포 시 서버 주소로 교체
+const BASE_URL = 'http://43.202.209.189:8081'; // 현재 테스트 포트
 
 // ✅ 회원가입 요청
 export async function signUp(userData) {
@@ -42,22 +42,24 @@ export async function login(email, password) {
     });
     console.log('로그인 응답:', response.data);
     const {
-      accessToken,
-      refreshToken,
+      //accessToken,
+      //refreshToken,
+      token,
       id,
       email: userEmail,
       nickname,
     } = response.data;
 
-    if (!accessToken || !refreshToken) {
+    if (/*!accessToken || !refreshToken*/ !token) {
       return {
         success: false,
         message: '로그인 응답에 토큰이 없습니다.',
       };
     }
+    await AsyncStorage.setItem('token', token);
+    //await AsyncStorage.setItem('accessToken', accessToken);
+    //await AsyncStorage.setItem('refreshToken', refreshToken);
 
-    await AsyncStorage.setItem('accessToken', accessToken);
-    await AsyncStorage.setItem('refreshToken', refreshToken);
     await AsyncStorage.setItem(
       'user',
       JSON.stringify({ id, email: userEmail, nickname })
