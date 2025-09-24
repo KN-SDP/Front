@@ -1,49 +1,118 @@
 // Login.js
-// 로그인 화면
-// 👉 입력한 이메일/비밀번호를 AuthService.login()으로 전달
-// 👉 성공 시 Home 화면으로 이동
-
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
-import { login } from './AuthService';
+import {
+  TextInput,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+} from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+
+// Restyle
+import { createBox, createText, useTheme } from '@shopify/restyle';
+import AuthService from './AuthService';
+
+const Box = createBox();
+const T = createText();
 
 export default function Login({ navigation }) {
+  // 웹 탭 제목
+  useFocusEffect(
+    React.useCallback(() => {
+      if (typeof document !== 'undefined') document.title = '로그인 - Jajup';
+    }, [])
+  );
+
+  const theme = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleLogin = async () => {
-    const result = await login(email, password);
-    if (result.success) {
-      navigation.navigate('Home', { user: result.user });
-    } else {
-      Alert.alert('로그인 실패', result.message);
+  const onLogin = async () => {
+    setError('');
+    if (!email || !password) {
+      setError('이메일과 비밀번호를 입력해 주세요.');
+      return;
+    }
+    try {
+      setSubmitting(true);
+      await AuthService.login(email.trim(), password);
+      navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+    } catch (e) {
+      setError('로그인에 실패했습니다. 입력 정보를 확인해 주세요.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
+  const goSignUp = () => navigation.navigate('SignUp');
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>로그인</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="이메일"
-        value={email}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="비밀번호"
-        value={password}
-        secureTextEntry
-        onChangeText={setPassword}
-      />
-      <Button title="로그인" onPress={handleLogin} />
-      <Button title="회원가입" onPress={() => navigation.navigate('SignUp')} />
-    </View>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.select({ ios: 'padding', android: undefined })}
+    >
+      <Box flex={1} padding="xl" justifyContent="center" gap="m">
+        <T variant="title" textAlign="center" marginBottom="s">로그인</T>
+
+        {/* 이메일 */}
+        <Box borderWidth={1} borderColor="border" borderRadius="s" padding="m">
+          <TextInput
+            placeholder="이메일"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            textContentType="emailAddress"
+            autoCorrect={false}
+            returnKeyType="next"
+            style={{ fontSize: 16 }}
+          />
+        </Box>
+
+        {/* 비밀번호 */}
+        <Box borderWidth={1} borderColor="border" borderRadius="s" padding="m">
+          <TextInput
+            placeholder="비밀번호"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            textContentType="password"
+            returnKeyType="done"
+            onSubmitEditing={onLogin}
+            style={{ fontSize: 16 }}
+          />
+        </Box>
+
+        {!!error && (
+          <T variant="error" marginTop="xs">{error}</T>
+        )}
+
+        {/* 로그인 버튼 */}
+        <Pressable
+          onPress={onLogin}
+          disabled={submitting}
+          style={{
+            backgroundColor: submitting ? theme.colors.primaryDisabled : theme.colors.primary,
+            padding: theme.spacing['2xl'],
+            borderRadius: theme.radii.m,
+            alignItems: 'center',
+          }}
+        >
+          {submitting ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <T variant="button">로그인</T>
+          )}
+        </Pressable>
+
+        {/* 회원가입 링크 */}
+        <Pressable onPress={goSignUp} style={{ alignItems: 'center', padding: theme.spacing.s }}>
+          <T>아직 계정이 없으신가요? 회원가입</T>
+        </Pressable>
+      </Box>
+    </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20 },
-  title: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
-  input: { borderWidth: 1, padding: 10, marginBottom: 10 },
-});

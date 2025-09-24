@@ -1,100 +1,108 @@
 // SignUp.js
-// 회원가입 화면
-// 👉 입력한 데이터(이메일, 비밀번호, 이름 등)를 AuthService.signUp()으로 전달
-// 👉 성공 시 로그인 화면으로 이동
-
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
-import { signUp } from './AuthService';
+import { TextInput, ActivityIndicator, Pressable } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { createBox, createText, useTheme } from '@shopify/restyle';
+import AuthService from './AuthService';
+
+const Box = createBox();
+const T = createText();
+
+const emailOk = (v) => /\S+@\S+\.\S+/.test(v);
 
 export default function SignUp({ navigation }) {
-  const [userEmail, setEmail] = useState('');
-  const [userPassword, setPassword] = useState('');
-  const [checkedPassword, setCheckedPassword] = useState('');
-  const [userName, setName] = useState('');
-  const [userNickname, setNickname] = useState('');
-  const [userBirth, setBirth] = useState('');
-  const [userPhoneNumber, setPhoneNumber] = useState('');
+  // 웹 탭 제목
+  useFocusEffect(
+    React.useCallback(() => {
+      if (typeof document !== 'undefined') document.title = '회원가입 - Jajup';
+    }, [])
+  );
 
-  const handleSignUp = async () => {
-    if (userPassword !== checkedPassword) {
-      Alert.alert('비밀번호 불일치', '비밀번호와 확인 비밀번호가 다릅니다.');
-      return;
-    }
+  const theme = useTheme();
+  const [form, setForm] = useState({
+    email: '',
+    password: '',
+    password2: '',
+    name: '',
+    nickname: '',
+    birth: '',
+    phone: '',
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
-    const userData = {
-      userEmail,
-      userPassword,
-      checkedPassword,
-      userName,
-      userNickname,
-      userBirth,
-      userPhoneNumber,
-    };
-    const result = await signUp(userData);
+  const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
-    if (result.success) {
-      Alert.alert('회원가입 성공', '이제 로그인해주세요.');
-      navigation.navigate('Login');
-    } else {
-      Alert.alert('회원가입 실패', result.message);
+  const onSubmit = async () => {
+    setError('');
+    if (!emailOk(form.email)) return setError('올바른 이메일을 입력해 주세요.');
+    if (form.password.length < 6) return setError('비밀번호는 6자 이상이어야 합니다.');
+    if (form.password !== form.password2) return setError('비밀번호가 일치하지 않습니다.');
+
+    try {
+      setSubmitting(true);
+      const payload = {
+        email: form.email.trim(),
+        password: form.password,
+        name: form.name || undefined,
+        nickname: form.nickname || undefined,
+        birth: form.birth || undefined,   // 백엔드 명세(예: YYYY-MM-DD)에 맞춰 입력
+        phone: form.phone || undefined,
+      };
+      await AuthService.signUp(payload);
+      navigation.replace('Login');
+    } catch (e) {
+      setError('회원가입에 실패했습니다. 입력값을 확인해 주세요.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
+  const Input = ({ value, onChangeText, placeholder, secureTextEntry, keyboardType, returnKeyType, onSubmitEditing }) => (
+    <Box borderWidth={1} borderColor="border" borderRadius="s" padding="m">
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        secureTextEntry={secureTextEntry}
+        keyboardType={keyboardType}
+        returnKeyType={returnKeyType}
+        onSubmitEditing={onSubmitEditing}
+        style={{ fontSize: 16 }}
+        autoCapitalize="none"
+        autoCorrect={false}
+      />
+    </Box>
+  );
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>회원가입</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="이메일"
-        value={userEmail}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="비밀번호"
-        value={userPassword}
-        secureTextEntry
-        onChangeText={setPassword}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="비밀번호 확인"
-        value={checkedPassword}
-        secureTextEntry
-        onChangeText={setCheckedPassword}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="이름"
-        value={userName}
-        onChangeText={setName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="닉네임"
-        value={userNickname}
-        onChangeText={setNickname}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="생년월일 (yyyymmdd)"
-        value={userBirth}
-        onChangeText={setBirth}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="전화번호"
-        value={userPhoneNumber}
-        onChangeText={setPhoneNumber}
-      />
-      <Button title="회원가입" onPress={handleSignUp} />
-    </View>
+    <Box flex={1} padding="xl" gap="m">
+      <T variant="title" textAlign="center">회원가입</T>
+
+      <Input placeholder="이메일" value={form.email} onChangeText={(v) => set('email', v)} keyboardType="email-address" returnKeyType="next" />
+      <Input placeholder="비밀번호" value={form.password} onChangeText={(v) => set('password', v)} secureTextEntry returnKeyType="next" />
+      <Input placeholder="비밀번호 확인" value={form.password2} onChangeText={(v) => set('password2', v)} secureTextEntry returnKeyType="next" />
+
+      <Input placeholder="이름(선택)" value={form.name} onChangeText={(v) => set('name', v)} returnKeyType="next" />
+      <Input placeholder="닉네임(선택)" value={form.nickname} onChangeText={(v) => set('nickname', v)} returnKeyType="next" />
+      <Input placeholder="생년월일 예: 2000-03-09 (선택)" value={form.birth} onChangeText={(v) => set('birth', v)} returnKeyType="next" />
+      <Input placeholder="전화번호(선택)" value={form.phone} onChangeText={(v) => set('phone', v)} keyboardType="phone-pad" returnKeyType="done" onSubmitEditing={onSubmit} />
+
+      {!!error && <T variant="error">{error}</T>}
+
+      <Pressable
+        onPress={onSubmit}
+        disabled={submitting}
+        style={{
+          backgroundColor: submitting ? theme.colors.primaryDisabled : theme.colors.primary,
+          padding: theme.spacing['2xl'],
+          borderRadius: theme.radii.m,
+          alignItems: 'center',
+          marginTop: theme.spacing.s,
+        }}
+      >
+        {submitting ? <ActivityIndicator color="#fff" /> : <T variant="button">회원가입</T>}
+      </Pressable>
+    </Box>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20 },
-  title: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
-  input: { borderWidth: 1, padding: 10, marginBottom: 10 },
-});
