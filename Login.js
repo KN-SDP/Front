@@ -8,9 +8,11 @@ import {
   Pressable,
   View,
   Text,
+  ScrollView,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { createBox, createText, useTheme } from '@shopify/restyle';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AuthService from './AuthService';
 
 const Box = createBox();
@@ -25,6 +27,7 @@ export default function Login({ navigation }) {
     }, [])
   );
 
+  const insets = useSafeAreaInsets();
   const theme = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -60,11 +63,17 @@ export default function Login({ navigation }) {
       style={{ flex: 1, backgroundColor: '#fff' }}
       behavior={Platform.select({ ios: 'padding', android: undefined })}
     >
-      <Box
-        flex={1}
-        alignItems="center"
-        justifyContent="center"
-        padding="xl"
+      <ScrollView
+        style={{ flex: 1 }}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{
+          paddingTop: insets.top + 24,
+          paddingBottom: insets.bottom + 40,
+          paddingHorizontal: 20,
+          flexGrow: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
       >
         {/* 가운데 카드 컨테이너 (웹에서 maxWidth 적용) */}
         <Box
@@ -74,7 +83,6 @@ export default function Login({ navigation }) {
             alignSelf: 'center',
           }}
         >
-
           {/* 브랜드 타이틀 */}
           <Box marginBottom="2xl">
             <T
@@ -127,6 +135,7 @@ export default function Login({ navigation }) {
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <TextInput
                 placeholder="비밀번호"
+                placeholderTextColor="#999"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={secure}
@@ -139,7 +148,6 @@ export default function Login({ navigation }) {
                 hitSlop={8}
                 style={{ paddingLeft: 8, paddingVertical: 4 }}
               >
-                {/* 간단 아이콘(웹/모바일 공통 유니코드) */}
                 <Text style={{ fontSize: 20 }}>{secure ? '🙈' : '👁️'}</Text>
               </Pressable>
             </View>
@@ -224,7 +232,7 @@ export default function Login({ navigation }) {
           <Pressable
             onPress={() => {}}
             style={{
-              backgroundColor: '#8E8E93', // Google(무채색 버튼 느낌)
+              backgroundColor: '#8E8E93', // Google
               padding: theme.spacing['2xl'],
               borderRadius: theme.radii.m,
               alignItems: 'center',
@@ -250,7 +258,7 @@ export default function Login({ navigation }) {
             </Pressable>
           </View>
         </Box>
-      </Box>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
