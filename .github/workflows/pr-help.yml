@@ -1,0 +1,44 @@
+name: PR Helper
+
+on:
+  pull_request:
+    types: [opened, reopened]
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Add help comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            👋 실행 가이드
+
+            1) 의존성 클린 설치  
+               ```bash
+               rm -rf node_modules   # Windows: rd /s /q node_modules
+               npm ci
+               ```
+
+            2) 개발 서버 실행(웹)  
+               ```bash
+               npx expo start -c
+               # 브라우저 DevTools에서 'w' 눌러 웹 실행
+               ```
+
+            3) 흔한 오류 해결
+            - `Cannot find module 'babel-preset-expo'` → `npx expo install babel-preset-expo`
+            - `[BABEL] ... .plugins is not a valid Plugin property` → 루트의 babel.config.js만 사용하고, 아래 구성 유지:
+              ```js
+              export default function (api) {
+                api.cache(true);
+                return {
+                  presets: ['babel-preset-expo'],
+                  plugins: ['react-native-reanimated/plugin'], // 마지막
+                };
+              }
+              ```
