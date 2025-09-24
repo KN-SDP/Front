@@ -23,12 +23,5 @@ jobs:
       - name: Clean install (npm ci)
         run: npm ci
 
-      - name: Fail if node_modules is committed
-        run: |
-          if [ -d "node_modules" ]; then
-            echo "❌ node_modules 폴더가 레포에 커밋되어 있습니다. .gitignore를 확인하세요."
-            exit 1
-          fi
-
       - name: Build (Expo export web)
         run: npx expo export --platform web
