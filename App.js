@@ -72,8 +72,12 @@ export default function App() {
             component={Home}
             options={{ title: '홈', headerBackVisible: false }}
           />
-          <Stack.Screen name="Login" component={Login} options={{ title: '로그인' }} />
-          <Stack.Screen name="SignUp" component={SignUp} options={{ title: '회원가입' }} />
+          <Stack.Screen
+name="Login"
+component={Login}
+options={{ headerTitle: '', headerShadowVisible: false }}
+/>
+          <Stack.Screen name="SignUp" component={SignUp} options={{ headerTitle: '', headerShadowVisible: false }} />
         </Stack.Navigator>
       </NavigationContainer>
     </ThemeProvider>
