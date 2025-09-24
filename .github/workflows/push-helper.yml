@@ -1,0 +1,25 @@
+name: Push Helper
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Add short help comment
+        uses: peter-evans/commit-comment@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          sha: ${{ github.sha }}
+          body: |
+            👋 실행 가이드
+
+            1) 설치: `npm ci`
+            2) 실행: `npx expo start -c`
+            3) 오류 시: `npx expo install babel-preset-expo`
