@@ -38,8 +38,12 @@ export default function Login({ navigation }) {
     }
     try {
       setSubmitting(true);
-      await AuthService.login(email.trim(), password);
-      navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+      const res = await AuthService.login(email.trim(), password);
+      if (res?.success) {
+        navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+      } else {
+        setError(res?.message || '로그인에 실패했습니다. 입력 정보를 확인해 주세요.');
+      }
     } catch (e) {
       setError('로그인에 실패했습니다. 입력 정보를 확인해 주세요.');
     } finally {
@@ -81,16 +85,14 @@ export default function Login({ navigation }) {
             secureTextEntry
             textContentType="password"
             returnKeyType="done"
-            onSubmitEditing={onLogin}
             style={{ fontSize: 16 }}
           />
         </Box>
 
         {!!error && (
-          <T variant="error" marginTop="xs">{error}</T>
+          <T variant="error" style={{ marginTop: theme.spacing.xs }}>{error}</T>
         )}
 
-        {/* 로그인 버튼 */}
         <Pressable
           onPress={onLogin}
           disabled={submitting}
@@ -99,6 +101,7 @@ export default function Login({ navigation }) {
             padding: theme.spacing['2xl'],
             borderRadius: theme.radii.m,
             alignItems: 'center',
+            marginTop: theme.spacing.s,
           }}
         >
           {submitting ? (

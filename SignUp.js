@@ -20,12 +20,13 @@ const Field = React.memo(function Field({
   returnKeyType,
   onSubmitEditing,
 }) {
+  const theme = useTheme();
   return (
     <Box borderWidth={1} borderColor="border" borderRadius="s" padding="m">
       <TextInput
+        placeholder={placeholder}
         value={value}
         onChangeText={onChangeText}
-        placeholder={placeholder}
         secureTextEntry={secureTextEntry}
         keyboardType={keyboardType}
         returnKeyType={returnKeyType}
@@ -60,33 +61,56 @@ export default function SignUp({ navigation }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // ✅ setForm 핸들러를 필드별로 안정화 (매 렌더마다 새 함수 생성 방지)
-  const setEmail = useCallback((v) => setForm((p) => ({ ...p, email: v })), []);
-  const setPassword = useCallback((v) => setForm((p) => ({ ...p, password: v })), []);
-  const setPassword2 = useCallback((v) => setForm((p) => ({ ...p, password2: v })), []);
-  const setName = useCallback((v) => setForm((p) => ({ ...p, name: v })), []);
-  const setNickname = useCallback((v) => setForm((p) => ({ ...p, nickname: v })), []);
-  const setBirth = useCallback((v) => setForm((p) => ({ ...p, birth: v })), []);
-  const setPhone = useCallback((v) => setForm((p) => ({ ...p, phone: v })), []);
+  const setEmail = (v) => setForm((f) => ({ ...f, email: v }));
+  const setPassword = (v) => setForm((f) => ({ ...f, password: v }));
+  const setPassword2 = (v) => setForm((f) => ({ ...f, password2: v }));
+  const setName = (v) => setForm((f) => ({ ...f, name: v }));
+  const setNickname = (v) => setForm((f) => ({ ...f, nickname: v }));
+  const setBirth = (v) => setForm((f) => ({ ...f, birth: v }));
+  const setPhone = (v) => setForm((f) => ({ ...f, phone: v }));
+
+  const disabled = useMemo(
+    () => submitting,
+    [submitting]
+  );
 
   const onSubmit = useCallback(async () => {
     setError('');
+
+    // 명세 반영: 유효성 확인
     if (!emailOk(form.email)) return setError('올바른 이메일을 입력해 주세요.');
-    if (form.password.length < 6) return setError('비밀번호는 6자 이상이어야 합니다.');
-    if (form.password !== form.password2) return setError('비밀번호가 일치하지 않습니다.');
+    if (form.password.length < 8 || form.password.length > 20)
+      return setError('비밀번호는 8~20자여야 합니다.');
+    if (form.password !== form.password2)
+      return setError('비밀번호가 일치하지 않습니다.');
+    if (!form.name?.trim()) return setError('이름을 입력해 주세요.');
+    if (!form.nickname?.trim()) return setError('닉네임을 입력해 주세요.');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(form.birth))
+      return setError('생년월일은 YYYY-MM-DD 형식입니다.');
+
+    const phoneDigits = (form.phone || '').replace(/[^0-9]/g, '');
+    if (!(phoneDigits.length === 10 || phoneDigits.length === 11))
+      return setError('전화번호는 하이픈 없이 10~11자리 숫자입니다.');
 
     try {
       setSubmitting(true);
       const payload = {
+        // 폼 키로 넘겨도 AuthService가 API 스펙으로 매핑합니다.
         email: form.email.trim(),
         password: form.password,
-        name: form.name || undefined,
-        nickname: form.nickname || undefined,
-        birth: form.birth || undefined, // 백엔드 명세(YYYY-MM-DD 등)에 맞춰 입력
-        phone: form.phone || undefined,
+        password2: form.password2,
+        name: form.name.trim(),
+        nickname: form.nickname.trim(),
+        birth: form.birth,
+        phone: phoneDigits,
       };
-      await AuthService.signUp(payload);
-      navigation.replace('Login');
+
+      const res = await AuthService.signUp(payload);
+      if (res?.success) {
+        navigation.replace('Login');
+      } else {
+        setError(res?.message || '회원가입에 실패했습니다.');
+      }
     } catch (e) {
       setError('회원가입에 실패했습니다. 입력값을 확인해 주세요.');
     } finally {
@@ -105,13 +129,15 @@ export default function SignUp({ navigation }) {
         keyboardType="email-address"
         returnKeyType="next"
       />
+
       <Field
-        placeholder="비밀번호"
+        placeholder="비밀번호 (8~20자)"
         value={form.password}
         onChangeText={setPassword}
         secureTextEntry
         returnKeyType="next"
       />
+
       <Field
         placeholder="비밀번호 확인"
         value={form.password2}
@@ -121,39 +147,44 @@ export default function SignUp({ navigation }) {
       />
 
       <Field
-        placeholder="이름(선택)"
+        placeholder="이름"
         value={form.name}
         onChangeText={setName}
         returnKeyType="next"
       />
+
       <Field
-        placeholder="닉네임(선택)"
+        placeholder="닉네임"
         value={form.nickname}
         onChangeText={setNickname}
         returnKeyType="next"
       />
+
       <Field
-        placeholder="생년월일 예: 2000-03-09 (선택)"
+        placeholder="생년월일 (YYYY-MM-DD)"
         value={form.birth}
         onChangeText={setBirth}
+        keyboardType="numbers-and-punctuation"
         returnKeyType="next"
       />
+
       <Field
-        placeholder="전화번호(선택)"
+        placeholder="전화번호 (하이픈 없이 입력)"
         value={form.phone}
         onChangeText={setPhone}
         keyboardType="phone-pad"
         returnKeyType="done"
-        onSubmitEditing={onSubmit}
       />
 
-      {!!error && <T variant="error">{error}</T>}
+      {!!error && (
+        <T variant="error" style={{ marginTop: theme.spacing.xs }}>{error}</T>
+      )}
 
       <Pressable
         onPress={onSubmit}
-        disabled={submitting}
+        disabled={disabled}
         style={{
-          backgroundColor: submitting ? theme.colors.primaryDisabled : theme.colors.primary,
+          backgroundColor: disabled ? theme.colors.primaryDisabled : theme.colors.primary,
           padding: theme.spacing['2xl'],
           borderRadius: theme.radii.m,
           alignItems: 'center',
