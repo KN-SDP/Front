@@ -1,137 +1,147 @@
 // Home.js
-import React, { useEffect, useState, useCallback } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, Pressable } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
-import { createBox, createText, useTheme } from '@shopify/restyle';
+import React, { useEffect, useState } from 'react';
+import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import AuthService from './AuthService';
 
-const Box = createBox();
-const T = createText();
-
 export default function Home({ navigation }) {
-  // 웹 탭 제목
-  useFocusEffect(
-    React.useCallback(() => {
-      if (typeof document !== 'undefined') document.title = '홈 - Jajup';
-    }, [])
-  );
-
-  const theme = useTheme();
-  const [loading, setLoading] = useState(true);        // 초기 로딩
-  const [refreshing, setRefreshing] = useState(false); // 당겨서 새로고침
-  const [user, setUser] = useState(null);              // 로그인 유저(없으면 게스트)
-  const [err, setErr] = useState('');                  // 안내/오류 메시지
-
-  // ✅ AuthService 내부 구현에 의존하지 않고, 프로필 호출 성공/실패로 상태 판단
-  const loadProfile = useCallback(async (isPull = false) => {
-    if (isPull) setRefreshing(true);
-    else setLoading(true);
-    setErr('');
-    try {
-      const me = await AuthService.getProfile();
-      setUser(me || null);
-      if (!me) setErr('로그인 정보가 없거나 만료되었을 수 있어요.');
-    } catch (e) {
-      setUser(null);
-      setErr('로그인 정보가 없거나 만료되었을 수 있어요.');
-    } finally {
-      if (isPull) setRefreshing(false);
-      else setLoading(false);
-    }
-  }, []);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null); // { userId, email, username, nickname }
+  const [showWelcome, setShowWelcome] = useState(false);
 
   useEffect(() => {
-    loadProfile(false);
-  }, [loadProfile]);
-
-  const onRefresh = () => loadProfile(true);
+    let mounted = true;
+    (async () => {
+      try {
+        const u = await AuthService.getCurrentUser();
+        if (!mounted) return;
+        setUser(u);
+        // 로그인 직후 진입 시 환영 배너 한 번 노출
+        setShowWelcome(!!u);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const onLogout = async () => {
-    try {
-      if (typeof AuthService.logout === 'function') await AuthService.logout();
-    } catch {}
+    await AuthService.clearAuth();
     setUser(null);
-    setErr('');
+    setShowWelcome(false);
+    // 필요 시 로그인으로 이동
+    // navigation.replace('Login');
   };
 
-  // 초기 로딩
   if (loading) {
     return (
-      <Box flex={1} justifyContent="center" alignItems="center" padding="xl" gap="s">
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator />
-        <T variant="hint">로그인 상태 확인 중...</T>
-      </Box>
+      </View>
     );
   }
 
-  // 로그인 상태
-  if (user) {
-    const displayName =
-      user?.name ?? user?.nickname ?? user?.username ?? user?.email ?? '사용자';
+  const displayName = user?.nickname || user?.username || '사용자';
 
-    return (
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ padding: theme.spacing.xl }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      >
-        {!!err && <T variant="error" marginBottom="s">{err}</T>}
-        <T variant="title" marginBottom="s">{displayName}님, 환영합니다!</T>
-
-        {/* 홈 콘텐츠 영역 */}
-        <T marginBottom="l">여기에 대시보드/리스트/버튼 등을 배치하세요.</T>
-
-        <Box flexDirection="row" gap="m" marginTop="m">
-          <Pressable
-            onPress={onRefresh}
-            style={{
-              backgroundColor: '#444',
-              padding: theme.spacing.m,
-              borderRadius: theme.radii.s,
-            }}
-          >
-            <T color="background">프로필 새로고침</T>
-          </Pressable>
-
-          <Pressable
-            onPress={onLogout}
-            style={{
-              backgroundColor: theme.colors.primary,
-              padding: theme.spacing.m,
-              borderRadius: theme.radii.s,
-            }}
-          >
-            <T variant="button">로그아웃</T>
-          </Pressable>
-        </Box>
-      </ScrollView>
-    );
-  }
-
-  // 게스트 상태
   return (
-    <Box flex={1} padding="xl" justifyContent="center" gap="m">
-      {!!err && <T variant="error" textAlign="center">{err}</T>}
+    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+      {/* ✅ 상단 환영 배너 (한 줄, 닫기 가능) */}
+      {showWelcome && (
+        <View
+          style={{
+            backgroundColor: '#E6F7EE', // 연한 그린
+            borderBottomWidth: 1,
+            borderBottomColor: '#D6F0E3',
+            paddingVertical: 10,
+            paddingHorizontal: 14,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <Text style={{ color: '#137C4B', fontWeight: '700' }}>
+            ✅ 로그인되었습니다. 환영해요, {displayName} 님!
+          </Text>
+          <Pressable onPress={() => setShowWelcome(false)} hitSlop={10}>
+            <Text style={{ color: '#137C4B', fontWeight: '700' }}>닫기</Text>
+          </Pressable>
+        </View>
+      )}
 
-      <T variant="title" textAlign="center">환영합니다! 먼저 로그인해 주세요.</T>
-      <T variant="hint" textAlign="center">로그인하면 프로필과 개인화된 콘텐츠가 표시됩니다.</T>
-
-      <Pressable
-        onPress={() => navigation.navigate('Login')}
+      {/* 상단바 영역: 좌측 타이틀, 우측 상태 Pill + 로그아웃 */}
+      <View
         style={{
-          backgroundColor: theme.colors.primary,
-          padding: theme.spacing['2xl'],
-          borderRadius: theme.radii.m,
+          paddingHorizontal: 16,
+          paddingVertical: 14,
+          flexDirection: 'row',
           alignItems: 'center',
-          marginTop: theme.spacing.s,
+          justifyContent: 'space-between',
+          borderBottomWidth: 1,
+          borderBottomColor: '#EFEFF4',
         }}
       >
-        <T variant="button">로그인</T>
-      </Pressable>
+        <Text style={{ fontSize: 20, fontWeight: '800' }}>Home</Text>
 
-      <Pressable onPress={() => navigation.navigate('SignUp')} style={{ alignItems: 'center', padding: theme.spacing.s }}>
-        <T>아직 계정이 없으신가요? 회원가입</T>
-      </Pressable>
-    </Box>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          {/* ✅ 로그인 상태 Pill */}
+          <View
+            style={{
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+              borderRadius: 999,
+              backgroundColor: user ? '#EEF9F1' : '#F2F2F7',
+              borderWidth: 1,
+              borderColor: user ? '#BFEAD1' : '#E5E5EA',
+              marginRight: 6,
+            }}
+          >
+            <Text style={{ fontSize: 12, color: user ? '#137C4B' : '#666' }}>
+              {user ? `로그인: ${displayName}` : '비로그인'}
+            </Text>
+          </View>
+
+          {/* 로그아웃 / 로그인 버튼 */}
+          {user ? (
+            <Pressable
+              onPress={onLogout}
+              style={{
+                backgroundColor: '#000',
+                borderRadius: 10,
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+              }}
+            >
+              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>
+                로그아웃
+              </Text>
+            </Pressable>
+          ) : (
+            <Pressable
+              onPress={() => navigation.replace('Login')}
+              style={{
+                backgroundColor: '#000',
+                borderRadius: 10,
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+              }}
+            >
+              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>
+                로그인
+              </Text>
+            </Pressable>
+          )}
+        </View>
+      </View>
+
+      {/* 본문 예시 */}
+      <View style={{ padding: 16 }}>
+        <Text style={{ fontSize: 16 }}>
+          {user
+            ? `${displayName} 님, 반가워요! 최근 활동을 이어가 보세요.`
+            : '로그인하면 더 많은 기능을 이용할 수 있어요.'}
+        </Text>
+      </View>
+    </View>
   );
 }

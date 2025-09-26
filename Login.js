@@ -8,257 +8,186 @@ import {
   Pressable,
   View,
   Text,
-  ScrollView,
+  Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { createBox, createText, useTheme } from '@shopify/restyle';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AuthService from './AuthService';
 
-const Box = createBox();
-const T = createText();
-
-const CONTENT_MAX_WIDTH = 360; // 모바일 기준 폭, 웹에서는 가운데 정렬 + 좌우 여백
+const CONTENT_MAX_WIDTH = 360;
+const PH = '#999';
 
 export default function Login({ navigation }) {
   useFocusEffect(
     React.useCallback(() => {
-      if (typeof document !== 'undefined') document.title = '로그인 - Smart Ledger';
+      if (typeof document !== 'undefined')
+        document.title = '로그인 - Smart Ledger';
     }, [])
   );
 
-  const insets = useSafeAreaInsets();
-  const theme = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [secure, setSecure] = useState(true);
+  const [secure, setSecure] = useState(true); // ✅ 가시성 토글 상태
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
+  const canSubmit =
+    email.trim() && password.length >= 8 && password.length <= 20;
+
   const onLogin = async () => {
-    setError('');
-    if (!email || !password) {
-      setError('이메일과 비밀번호를 입력해 주세요.');
+    if (!canSubmit) {
+      Alert.alert('알림', '이메일/비밀번호를 확인해 주세요.');
       return;
     }
+    setError('');
+    setSubmitting(true);
     try {
-      setSubmitting(true);
-      const res = await AuthService.login(email.trim(), password);
-      if (res?.success) {
-        navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+      // 명세: { email, password }
+      const data = await AuthService.login({ email: email.trim(), password });
+      Alert.alert('로그인', `환영합니다, ${data?.username || '사용자'} 님!`);
+      navigation.replace('Home');
+    } catch (e) {
+      const status = e?.response?.status;
+      const code = e?.response?.data?.error_code;
+      const message = e?.response?.data?.message;
+
+      if (status === 401 && code === 'InvalidCredentials') {
+        Alert.alert('로그인 실패', '이메일 또는 비밀번호가 올바르지 않습니다.');
+      } else if (status === 400 && code === 'ValidationError') {
+        Alert.alert('유효성 오류', message || '올바른 이메일 형식이 아닙니다.');
+      } else if (status === 500) {
+        Alert.alert('서버 오류', '서버에 문제가 발생했습니다.');
       } else {
-        setError(res?.message || '로그인에 실패했습니다. 입력 정보를 확인해 주세요.');
+        Alert.alert(
+          '오류',
+          message || '로그인에 실패했습니다. 다시 시도해 주세요.'
+        );
       }
-    } catch {
-      setError('로그인에 실패했습니다. 입력 정보를 확인해 주세요.');
+      setError(message || '로그인 실패');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const goSignUp = () => navigation.navigate('SignUp');
-
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: '#fff' }}
       behavior={Platform.select({ ios: 'padding', android: undefined })}
+      style={{ flex: 1, backgroundColor: '#fff' }}
     >
-      <ScrollView
-        style={{ flex: 1 }}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{
-          paddingTop: insets.top + 24,
-          paddingBottom: insets.bottom + 40,
-          paddingHorizontal: 20,
-          flexGrow: 1,
+      <View
+        style={{
+          flex: 1,
           alignItems: 'center',
           justifyContent: 'center',
+          paddingHorizontal: 16,
         }}
       >
-        {/* 가운데 카드 컨테이너 (웹에서 maxWidth 적용) */}
-        <Box
-          width="100%"
-          style={{
-            maxWidth: CONTENT_MAX_WIDTH,
-            alignSelf: 'center',
-          }}
-        >
-          {/* 브랜드 타이틀 */}
-          <Box marginBottom="2xl">
-            <T
-              style={{ fontSize: 40, fontWeight: '800', lineHeight: 48 }}
-              textAlign="center"
-            >
-              Smart
-            </T>
-            <T
-              style={{ fontSize: 40, fontWeight: '800', lineHeight: 48 }}
-              textAlign="center"
-            >
-              Ledger
-            </T>
-          </Box>
+        <View style={{ width: '100%', maxWidth: CONTENT_MAX_WIDTH }}>
+          <Text style={{ fontSize: 22, fontWeight: '800', marginBottom: 16 }}>
+            로그인
+          </Text>
 
-          {/* ID 라벨 + 입력 */}
-          <T variant="hint" marginBottom="xs">ID</T>
-          <Box
-            borderWidth={1}
-            borderColor="border"
-            borderRadius="s"
-            padding="m"
-            marginBottom="l"
-          >
+          <Text style={styles.label}>이메일</Text>
+          <View style={styles.inputWrap}>
             <TextInput
-              placeholder="예) kangnam@naver.com"
-              placeholderTextColor="#999"
+              placeholder="example@domain.com"
+              placeholderTextColor={PH}
               value={email}
               onChangeText={setEmail}
+              style={styles.input}
               autoCapitalize="none"
               keyboardType="email-address"
-              textContentType="emailAddress"
-              autoCorrect={false}
               returnKeyType="next"
-              style={{ fontSize: 16 }}
             />
-          </Box>
+          </View>
 
-          {/* PW 라벨 + 입력 + 보기 토글 */}
-          <T variant="hint" marginBottom="xs">PW</T>
-          <Box
-            borderWidth={1}
-            borderColor="border"
-            borderRadius="s"
-            paddingHorizontal="m"
-            paddingVertical="m"
-            marginBottom="l"
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <TextInput
-                placeholder="비밀번호"
-                placeholderTextColor="#999"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={secure}
-                textContentType="password"
-                returnKeyType="done"
-                style={{ fontSize: 16, flex: 1 }}
-              />
-              <Pressable
-                onPress={() => setSecure((v) => !v)}
-                hitSlop={8}
-                style={{ paddingLeft: 8, paddingVertical: 4 }}
-              >
-                <Text style={{ fontSize: 20 }}>{secure ? '🙈' : '👁️'}</Text>
-              </Pressable>
-            </View>
-          </Box>
+          <Text style={styles.label}>비밀번호</Text>
+          <View style={styles.inputRow}>
+            <TextInput
+              placeholder="비밀번호 입력"
+              placeholderTextColor={PH}
+              value={password}
+              onChangeText={setPassword}
+              style={[styles.input, { paddingRight: 56 }]} // 버튼 공간
+              secureTextEntry={secure}
+              returnKeyType="done"
+            />
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setSecure((s) => !s)}
+              style={styles.eyeBtn}
+            >
+              <Text style={styles.eyeText}>{secure ? '보기' : '숨기기'}</Text>
+            </Pressable>
+          </View>
 
-          {/* 에러 메시지 */}
           {!!error && (
-            <T variant="error" marginBottom="s">{error}</T>
+            <Text style={{ color: '#d00', marginTop: 10 }}>{error}</Text>
           )}
 
-          {/* 기본 로그인 버튼 */}
           <Pressable
             onPress={onLogin}
-            disabled={submitting}
-            style={{
-              backgroundColor: submitting ? theme.colors.primaryDisabled : '#000',
-              padding: theme.spacing['2xl'],
-              borderRadius: theme.radii.m,
-              alignItems: 'center',
-              marginTop: theme.spacing.s,
-            }}
+            disabled={!canSubmit || submitting}
+            style={[
+              styles.submitBtn,
+              { opacity: !canSubmit || submitting ? 0.5 : 1 },
+            ]}
           >
-            {submitting ? <ActivityIndicator color="#fff" /> : (
-              <T variant="button">로그인</T>
+            {submitting ? (
+              <ActivityIndicator />
+            ) : (
+              <Text style={styles.submitText}>로그인</Text>
             )}
           </Pressable>
 
-          {/* 하단 링크: 회원가입 | ID 찾기 | PW 찾기 */}
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              paddingVertical: theme.spacing.l,
-            }}
-          >
-            <Pressable onPress={goSignUp}><Text>회원가입</Text></Pressable>
-            <Text style={{ color: theme.colors.border }}>|</Text>
-            <Pressable onPress={() => { /* TODO: 아이디 찾기 라우팅 */ }}>
-              <Text>ID 찾기</Text>
-            </Pressable>
-            <Text style={{ color: theme.colors.border }}>|</Text>
-            <Pressable onPress={() => { /* TODO: 비밀번호 찾기 라우팅 */ }}>
-              <Text>PW 찾기</Text>
-            </Pressable>
-          </View>
-
-          {/* or 구분선 */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: theme.spacing.s }}>
-            <View style={{ flex: 1, height: 1, backgroundColor: theme.colors.border }} />
-            <Text style={{ marginHorizontal: 8, color: theme.colors.muted }}>or</Text>
-            <View style={{ flex: 1, height: 1, backgroundColor: theme.colors.border }} />
-          </View>
-
-          {/* 소셜 버튼들 */}
           <Pressable
-            onPress={() => {}}
-            style={{
-              backgroundColor: '#03C75A', // Naver
-              padding: theme.spacing['2xl'],
-              borderRadius: theme.radii.m,
-              alignItems: 'center',
-              marginTop: theme.spacing.l,
-            }}
+            onPress={() => navigation.replace('SignUp')}
+            style={{ alignSelf: 'center', marginTop: 14 }}
           >
-            <Text style={{ color: '#fff', fontWeight: '700' }}>NAVER</Text>
+            <Text style={{ fontSize: 13, color: '#555' }}>
+              계정이 없으신가요? 회원가입
+            </Text>
           </Pressable>
-
-          <Pressable
-            onPress={() => {}}
-            style={{
-              backgroundColor: '#FEE500', // Kakao
-              padding: theme.spacing['2xl'],
-              borderRadius: theme.radii.m,
-              alignItems: 'center',
-              marginTop: theme.spacing.s,
-            }}
-          >
-            <Text style={{ color: '#111', fontWeight: '700' }}>카카오</Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() => {}}
-            style={{
-              backgroundColor: '#8E8E93', // Google
-              padding: theme.spacing['2xl'],
-              borderRadius: theme.radii.m,
-              alignItems: 'center',
-              marginTop: theme.spacing.s,
-            }}
-          >
-            <Text style={{ color: '#fff', fontWeight: '700' }}>Google</Text>
-          </Pressable>
-
-          {/* 하단 정책 링크 */}
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              paddingVertical: theme.spacing['2xl'],
-            }}
-          >
-            <Pressable onPress={() => { /* TODO: 이용약관 라우팅 */ }}>
-              <Text style={{ color: theme.colors.muted }}>이용약관</Text>
-            </Pressable>
-            <Pressable onPress={() => { /* TODO: 개인정보처리방침 라우팅 */ }}>
-              <Text style={{ color: theme.colors.muted }}>개인정보처리방침</Text>
-            </Pressable>
-          </View>
-        </Box>
-      </ScrollView>
+        </View>
+      </View>
     </KeyboardAvoidingView>
   );
 }
+
+const styles = {
+  label: { fontSize: 13, fontWeight: '700', marginTop: 14, marginBottom: 6 },
+  inputWrap: {
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+  },
+  inputRow: {
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    backgroundColor: '#fff',
+    position: 'relative',
+    minHeight: 48,
+    justifyContent: 'center',
+  },
+  input: { fontSize: 15, paddingVertical: 12, paddingLeft: 0, paddingRight: 0 },
+  eyeBtn: {
+    position: 'absolute',
+    right: 10,
+    top: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+  },
+  eyeText: { fontSize: 13, color: '#555', fontWeight: '700' },
+  submitBtn: {
+    marginTop: 20,
+    backgroundColor: '#000',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  submitText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+};
