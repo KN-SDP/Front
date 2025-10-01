@@ -13,6 +13,17 @@ import {
 } from 'react-native';
 import AuthService from './AuthService';
 
+// ✅ 플랫폼별 Alert 유틸
+function showAlert(title, message, buttons) {
+  if (Platform.OS === 'web') {
+    window.alert(`${title ? `${title}\n` : ''}${message}`);
+    // 버튼 중 확인(onPress) 실행
+    if (buttons && buttons[0]?.onPress) buttons[0].onPress();
+  } else {
+    Alert.alert(title, message, buttons);
+  }
+}
+
 const CONTENT_MAX_WIDTH = 360;
 const PH = '#999';
 
@@ -114,7 +125,7 @@ export default function SignUp({ navigation }) {
 
   const onSubmit = async () => {
     if (!canSubmit) {
-      Alert.alert('알림', '입력값을 확인해 주세요.');
+      showAlert('알림', '입력값을 확인해 주세요.');
       return;
     }
     setErr('');
@@ -130,7 +141,7 @@ export default function SignUp({ navigation }) {
         userPhoneNumber: toOnlyDigitsPhone(telDigits),
       };
       await AuthService.signUp(payload);
-      Alert.alert('회원가입 완료', '가입이 완료되었습니다. 로그인해 주세요.', [
+      showAlert('회원가입 완료', '가입이 완료되었습니다. 로그인해 주세요.', [
         { text: '확인', onPress: () => navigation.replace('Login') },
       ]);
     } catch (e) {
@@ -139,15 +150,15 @@ export default function SignUp({ navigation }) {
       const message = e?.response?.data?.message;
 
       if (status === 409 && code === 'DuplicateEmail') {
-        Alert.alert('중복 이메일', '이미 등록된 이메일입니다.');
+        showAlert('중복 이메일', '이미 등록된 이메일입니다.');
       } else if (status === 409 && code === 'DuplicateNickname') {
-        Alert.alert('중복 닉네임', '이미 사용중인 닉네임입니다.');
+        showAlert('중복 닉네임', '이미 사용중인 닉네임입니다.');
       } else if (status === 400 && code === 'ValidationError') {
-        Alert.alert('유효성 오류', message || '입력 형식이 올바르지 않습니다.');
+        showAlert('유효성 오류', message || '입력 형식이 올바르지 않습니다.');
       } else if (status === 500) {
-        Alert.alert('서버 오류', '서버에 문제가 발생했습니다.');
+        showAlert('서버 오류', '서버에 문제가 발생했습니다.');
       } else {
-        Alert.alert(
+        showAlert(
           '오류',
           message || '회원가입에 실패했습니다. 다시 시도해 주세요.'
         );
@@ -180,7 +191,7 @@ export default function SignUp({ navigation }) {
           <Text style={styles.label}>이메일</Text>
           <View style={styles.inputWrap}>
             <TextInput
-              placeholder="example@domain.com"
+              placeholder="kangnam@naver.com"
               placeholderTextColor={PH}
               value={email}
               onChangeText={setEmail}
@@ -282,7 +293,7 @@ export default function SignUp({ navigation }) {
           <Text style={styles.label}>생년월일</Text>
           <View style={styles.inputWrap}>
             <TextInput
-              placeholder="예) 2001-03-09"
+              placeholder="예) 2002-01-01"
               placeholderTextColor={PH}
               value={formatBirth(birthDigits)}
               onChangeText={(text) =>

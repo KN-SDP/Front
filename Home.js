@@ -5,7 +5,7 @@ import AuthService from './AuthService';
 
 export default function Home({ navigation }) {
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null); // { userId, email, username, nickname }
+  const [user, setUser] = useState(null);
   const [showWelcome, setShowWelcome] = useState(false);
 
   useEffect(() => {
@@ -15,7 +15,6 @@ export default function Home({ navigation }) {
         const u = await AuthService.getCurrentUser();
         if (!mounted) return;
         setUser(u);
-        // 로그인 직후 진입 시 환영 배너 한 번 노출
         setShowWelcome(!!u);
       } finally {
         if (mounted) setLoading(false);
@@ -26,122 +25,79 @@ export default function Home({ navigation }) {
     };
   }, []);
 
-  const onLogout = async () => {
-    await AuthService.clearAuth();
-    setUser(null);
-    setShowWelcome(false);
-    // 필요 시 로그인으로 이동
-    // navigation.replace('Login');
-  };
-
   if (loading) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
       </View>
     );
   }
 
-  const displayName = user?.nickname || user?.username || '사용자';
-
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
-      {/* ✅ 상단 환영 배너 (한 줄, 닫기 가능) */}
-      {showWelcome && (
-        <View
-          style={{
-            backgroundColor: '#E6F7EE', // 연한 그린
-            borderBottomWidth: 1,
-            borderBottomColor: '#D6F0E3',
-            paddingVertical: 10,
-            paddingHorizontal: 14,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <Text style={{ color: '#137C4B', fontWeight: '700' }}>
-            ✅ 로그인되었습니다. 환영해요, {displayName} 님!
-          </Text>
-          <Pressable onPress={() => setShowWelcome(false)} hitSlop={10}>
-            <Text style={{ color: '#137C4B', fontWeight: '700' }}>닫기</Text>
-          </Pressable>
-        </View>
-      )}
-
-      {/* 상단바 영역: 좌측 타이틀, 우측 상태 Pill + 로그아웃 */}
+      {/* 상단 타이틀 */}
       <View
         style={{
-          paddingHorizontal: 16,
-          paddingVertical: 14,
-          flexDirection: 'row',
+          paddingVertical: 16,
           alignItems: 'center',
-          justifyContent: 'space-between',
           borderBottomWidth: 1,
-          borderBottomColor: '#EFEFF4',
+          borderBottomColor: '#000',
         }}
       >
-        <Text style={{ fontSize: 20, fontWeight: '800' }}>Home</Text>
-
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          {/* ✅ 로그인 상태 Pill */}
-          <View
-            style={{
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-              borderRadius: 999,
-              backgroundColor: user ? '#EEF9F1' : '#F2F2F7',
-              borderWidth: 1,
-              borderColor: user ? '#BFEAD1' : '#E5E5EA',
-              marginRight: 6,
-            }}
-          >
-            <Text style={{ fontSize: 12, color: user ? '#137C4B' : '#666' }}>
-              {user ? `로그인: ${displayName}` : '비로그인'}
-            </Text>
-          </View>
-
-          {/* 로그아웃 / 로그인 버튼 */}
-          {user ? (
-            <Pressable
-              onPress={onLogout}
-              style={{
-                backgroundColor: '#000',
-                borderRadius: 10,
-                paddingHorizontal: 12,
-                paddingVertical: 8,
-              }}
-            >
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>
-                로그아웃
-              </Text>
-            </Pressable>
-          ) : (
-            <Pressable
-              onPress={() => navigation.replace('Login')}
-              style={{
-                backgroundColor: '#000',
-                borderRadius: 10,
-                paddingHorizontal: 12,
-                paddingVertical: 8,
-              }}
-            >
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>
-                로그인
-              </Text>
-            </Pressable>
-          )}
-        </View>
+        <Text style={{ fontSize: 20, fontWeight: '800' }}>Smart Ledger</Text>
       </View>
 
-      {/* 본문 예시 */}
-      <View style={{ padding: 16 }}>
-        <Text style={{ fontSize: 16 }}>
-          {user
-            ? `${displayName} 님, 반가워요! 최근 활동을 이어가 보세요.`
-            : '로그인하면 더 많은 기능을 이용할 수 있어요.'}
+      {/* 메인 박스 */}
+      <View
+        style={{
+          backgroundColor: '#C4C4C4',
+          paddingVertical: 40,
+          paddingHorizontal: 24,
+          marginHorizontal: 16,
+          marginTop: 20,
+          borderRadius: 12,
+        }}
+      >
+        <Text style={{ fontSize: 20, fontWeight: '700', marginBottom: 8 }}>
+          스마트한 자동화
+        </Text>
+        <Text style={{ fontSize: 20, fontWeight: '700' }}>소비내역 관리</Text>
+      </View>
+
+      {/* 안내 문구 */}
+      <View
+        style={{
+          backgroundColor: '#E5E5EA',
+          alignSelf: 'center',
+          paddingHorizontal: 14,
+          paddingVertical: 8,
+          borderRadius: 16,
+          marginTop: 30,
+        }}
+      >
+        <Text style={{ fontSize: 14, color: '#333', textAlign: 'center' }}>
+          로그인 하시면 기능을 확인하실 수 있어요.
         </Text>
       </View>
+
+      {/* 로그인 버튼 */}
+      <Pressable
+        onPress={() => navigation.replace('Login')}
+        style={{
+          backgroundColor: '#C4C4C4',
+          alignSelf: 'center',
+          marginTop: 16,
+          paddingHorizontal: 40,
+          paddingVertical: 12,
+          borderRadius: 12,
+        }}
+      >
+        <Text style={{ fontSize: 16, fontWeight: '700', color: '#000' }}>
+          로그인
+        </Text>
+      </Pressable>
+
+      {/* TODO: 하단 탭바 유지 */}
     </View>
   );
 }

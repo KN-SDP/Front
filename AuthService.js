@@ -32,22 +32,22 @@ const AuthService = {
   /** 로그인 시 토큰 + 사용자 정보 저장 */
   async login({ email, password }) {
     const res = await anon.post('/users/login', { email, password });
-    const data = res.data; // { userId, email, username, nickname, token }
+    const token = res.data.accessToken;
 
-    if (data?.token) {
-      await AsyncStorage.setItem(TOKEN_KEY, data.token);
-      api.defaults.headers.common.Authorization = `Bearer ${data.token}`;
+    if (token) {
+      await AsyncStorage.setItem(TOKEN_KEY, token);
+      api.defaults.headers.common.Authorization = `Bearer ${token}`;
     }
-    // ✅ 사용자 정보도 저장 (홈에서 사용)
+    // ✅ 사용자 정보는 토큰만 쓰므로 null로 저장
     const userPayload = {
-      userId: data?.userId ?? null,
-      email: data?.email ?? null,
-      username: data?.username ?? null,
-      nickname: data?.nickname ?? null,
+      userId: null,
+      email: null,
+      username: null,
+      nickname: null,
     };
     await AsyncStorage.setItem(USER_KEY, JSON.stringify(userPayload));
 
-    return data;
+    return token;
   },
 
   /** 현재 사용자/토큰 조회 */
