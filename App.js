@@ -8,7 +8,7 @@ import { ThemeProvider, createTheme } from '@shopify/restyle';
 
 import Login from './Login';
 import SignUp from './SignUp';
-import Home from './Home';
+import FindId from './FindId';
 
 const Stack = createNativeStackNavigator();
 
@@ -49,12 +49,17 @@ const theme = createTheme({
 
 const linking = {
   // 웹 URL ↔ 라우트 동기화 (라이트 플랜)
-  prefixes: [typeof window !== 'undefined' && window.location ? window.location.origin : 'myapp://'],
+  prefixes: [
+    typeof window !== 'undefined' && window.location
+      ? window.location.origin
+      : 'myapp://',
+  ],
   config: {
     screens: {
       Home: 'home',
       Login: 'login',
       SignUp: 'sign-up',
+      FindId: 'find-id',
     },
   },
 };
@@ -73,11 +78,20 @@ export default function App() {
             options={{ title: '홈', headerBackVisible: false }}
           />
           <Stack.Screen
-name="Login"
-component={Login}
-options={{ headerTitle: '', headerShadowVisible: false }}
-/>
-          <Stack.Screen name="SignUp" component={SignUp} options={{ headerTitle: '', headerShadowVisible: false }} />
+            name="Login"
+            component={Login}
+            options={{ headerTitle: '', headerShadowVisible: false }}
+          />
+          <Stack.Screen
+            name="SignUp"
+            component={SignUp}
+            options={{ headerTitle: '', headerShadowVisible: false }}
+          />
+          <Stack.Screen
+            name="FindId"
+            component={FindId}
+            options={{ headerTitle: '', headerShadowVisible: false }}
+          ></Stack.Screen>
         </Stack.Navigator>
       </NavigationContainer>
     </ThemeProvider>

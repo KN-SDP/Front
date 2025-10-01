@@ -166,7 +166,7 @@ export default function Login({ navigation }) {
               <Text style={styles.linkText}>회원가입</Text>
             </Pressable>
             <View style={styles.divider} />
-            <Pressable>
+            <Pressable onPress={() => navigation.navigate('findId')}>
               <Text style={styles.linkText}>ID 찾기</Text>
             </Pressable>
             <View style={styles.divider} />

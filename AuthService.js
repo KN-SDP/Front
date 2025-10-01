@@ -65,6 +65,32 @@ const AuthService = {
     await AsyncStorage.removeItem(USER_KEY);
     delete api.defaults.headers.common.Authorization;
   },
+
+  /** ID 찾기 */
+  async findId({ name, phoneNum, birth }) {
+    try {
+      const res = await anon.post('/users/recover-id', {
+        name,
+        phoneNum,
+        birth,
+      });
+      return {
+        success: true,
+        statusCode: res.status,
+        message: res.data?.message || '아이디를 찾았습니다.',
+        email: res.data?.email,
+      };
+    } catch (error) {
+      const errResponse = error.response;
+      console.error('findId Error:', errResponse?.data || error.message);
+      return {
+        success: false,
+        statusCode: errResponse?.status || 500,
+        errorCode: errResponse?.data?.error_code || 'UnknownError',
+        message: errResponse?.data?.message || '아이디 찾기 실패',
+      };
+    }
+  },
 };
 
 export default AuthService;
