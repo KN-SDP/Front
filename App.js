@@ -6,6 +6,7 @@ import SignUp from './SignUp';
 import FindId from './findId';
 import FindPw from './FindPw';
 import Home from './Home';
+import Motivation from './Motivation';
 
 const Stack = createNativeStackNavigator();
 
@@ -21,6 +22,7 @@ export default function App() {
         <Stack.Screen name="findId" component={FindId} />
         <Stack.Screen name="FindPw" component={FindPw} />
         <Stack.Screen name="Home" component={Home} />
+        <Stack.Screen name="Motivation" component={Motivation} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -14,7 +14,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import AuthService from './AuthService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const SIDEBAR_WIDTH = SCREEN_WIDTH * 0.7;
+const SIDEBAR_WIDTH = SCREEN_WIDTH * 0.3;
 
 export default function Home({ navigation }) {
   const [loading, setLoading] = useState(true);
