@@ -40,12 +40,12 @@ const formatPhoneNumber = (input) => {
   )}`;
 };
 
-// 생년월일 자동 슬래시(YYYY/MM/DD)
+// 생년월일 자동 슬래시(YYYY-MM-DD)
 const formatBirthDate = (input) => {
   const numbers = onlyDigits(input);
   if (numbers.length < 5) return numbers;
-  if (numbers.length < 7) return `${numbers.slice(0, 4)}/${numbers.slice(4)}`;
-  return `${numbers.slice(0, 4)}/${numbers.slice(4, 6)}/${numbers.slice(6, 8)}`;
+  if (numbers.length < 7) return `${numbers.slice(0, 4)}-${numbers.slice(4)}`;
+  return `${numbers.slice(0, 4)}-${numbers.slice(4, 6)}-${numbers.slice(6, 8)}`;
 };
 
 // YYYYMMDD 유효성 검사
@@ -75,8 +75,8 @@ export default function FindId({ navigation }) {
     if (!/^\d{3}-\d{3,4}-\d{4}$/.test(phoneNum)) {
       return '전화번호 형식이 올바르지 않습니다. (예: 010-1234-5678)';
     }
-    if (!/^\d{4}\/\d{2}\/\d{2}$/.test(birth)) {
-      return '생년월일 형식이 올바르지 않습니다. (예: 1990/01/01)';
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(birth)) {
+      return '생년월일 형식이 올바르지 않습니다. (예: 1990-01-01)';
     }
     const ymd = onlyDigits(birth); // YYYYMMDD
     if (!isValidYMD(ymd)) return '유효한 생년월일이 아닙니다.';
@@ -99,7 +99,7 @@ export default function FindId({ navigation }) {
       const payload = {
         name: name.trim(),
         phoneNum: onlyDigits(phoneNum), // 서버: 숫자만
-        birth: onlyDigits(birth), // 서버: YYYYMMDD
+        birth: birth, // 서버: YYYYMMDD
       };
 
       const response = await AuthService.findId(payload);

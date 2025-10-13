@@ -75,7 +75,7 @@ export default function FindIdView({
           style={styles.input}
           value={birth}
           onChangeText={setBirth}
-          placeholder="yyyy/mm/dd"
+          placeholder="yyyy-mm-dd"
           placeholderTextColor="#aaa"
           keyboardType={Platform.OS === 'web' ? 'default' : 'number-pad'}
           inputMode="numeric"
