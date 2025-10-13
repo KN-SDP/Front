@@ -1,4 +1,4 @@
-// FindId.js
+// FindPw.js 현재 findId.js코드 복붙
 import React, { useState } from 'react';
 import {
   View,
@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AuthService from './AuthService';
-import FindIdView from './view/FindIdView';
 
 // 공통 알림
 const showAlert = (title, message) => {
@@ -61,6 +60,7 @@ const isValidYMD = (yyyymmdd) => {
 };
 
 export default function FindId({ navigation }) {
+  // const ID
   const [name, setName] = useState('');
   const [phoneNum, setPhoneNum] = useState('');
   const [birth, setBirth] = useState('');
@@ -123,17 +123,126 @@ export default function FindId({ navigation }) {
   };
 
   return (
-    <FindIdView
-      navigation={navigation}
-      name={name}
-      setName={setName}
-      phoneNum={phoneNum}
-      setPhoneNum={handleTelChange}
-      birth={birth}
-      setBirth={handleBirthChange}
-      submitting={submitting}
-      error={error}
-      handleFindId={handleFindId}
-    />
+    <SafeAreaView style={styles.container}>
+      {/* 헤더 */}
+      <View style={styles.header}>
+        <Pressable
+          onPress={() => navigation?.goBack?.()}
+          accessibilityRole="button"
+          accessibilityLabel="뒤로가기"
+          hitSlop={8}
+          style={styles.backBtn}
+        >
+          <Ionicons name="chevron-back" size={28} color="black" />
+        </Pressable>
+        <Text style={styles.headerTitle}>ID 찾기</Text>
+      </View>
+
+      {/* 폼 */}
+      <View style={styles.form}>
+        {!!error && <Text style={styles.errorText}>{error}</Text>}
+
+        <Text style={styles.label}>이름</Text>
+        <TextInput
+          style={styles.input}
+          value={name}
+          onChangeText={setName}
+          placeholder="이름을 입력하세요."
+          placeholderTextColor="#aaa"
+          autoCapitalize="words"
+          autoCorrect={false}
+          textContentType="name"
+        />
+
+        <Text style={styles.label}>Tel</Text>
+        <TextInput
+          style={styles.input}
+          value={phoneNum}
+          onChangeText={handleTelChange}
+          placeholder="전화번호를 입력하세요."
+          placeholderTextColor="#aaa"
+          keyboardType={Platform.OS === 'web' ? 'default' : 'number-pad'}
+          inputMode="numeric" // 웹 키패드 힌트
+          autoCorrect={false}
+          autoCapitalize="none"
+          textContentType="telephoneNumber"
+          maxLength={13}
+        />
+
+        <Text style={styles.label}>생년월일</Text>
+        <TextInput
+          style={styles.input}
+          value={birth}
+          onChangeText={handleBirthChange}
+          placeholder="yyyy/mm/dd"
+          placeholderTextColor="#aaa"
+          keyboardType={Platform.OS === 'web' ? 'default' : 'number-pad'}
+          inputMode="numeric"
+          autoCorrect={false}
+          autoCapitalize="none"
+          textContentType="none"
+          maxLength={10}
+        />
+      </View>
+
+      {/* 버튼 */}
+      <Pressable
+        style={[styles.button, submitting && { opacity: 0.6 }]}
+        onPress={handleFindId}
+        disabled={submitting}
+        accessibilityRole="button"
+        accessibilityLabel="아이디 찾기"
+      >
+        <Text style={styles.buttonText}>
+          {submitting ? '확인 중...' : 'ID 찾기'}
+        </Text>
+      </Pressable>
+
+      {/* 푸터 */}
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>이용약관</Text>
+        <Text style={styles.footerText}>개인정보처리방침</Text>
+      </View>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#fff', paddingHorizontal: 24 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 32,
+  },
+  backBtn: {
+    padding: 4,
+  },
+  headerTitle: { fontSize: 20, fontWeight: 'bold', marginLeft: 8 },
+  form: { flex: 1 },
+  label: { fontWeight: 'bold', marginBottom: 6 },
+  input: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#999',
+    marginBottom: 24,
+    paddingVertical: 6,
+    fontSize: 16,
+  },
+  button: {
+    backgroundColor: '#000',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 24,
+    marginTop: 'auto',
+    gap: 20,
+  },
+  footerText: { color: '#000', fontSize: 13 },
+  errorText: { color: 'red', marginBottom: 16, fontSize: 14 },
+});
