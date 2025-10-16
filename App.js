@@ -3,7 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Login from './Login';
 import SignUp from './SignUp';
-import FindId from './findId';
+import FindId from './FindId';
 import FindPw from './FindPw';
 import Home from './Home';
 import Motivation from './Motivation';
@@ -19,7 +19,7 @@ export default function App() {
       >
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="SignUp" component={SignUp} />
-        <Stack.Screen name="findId" component={FindId} />
+        <Stack.Screen name="FindId" component={FindId} />
         <Stack.Screen name="FindPw" component={FindPw} />
         <Stack.Screen name="Home" component={Home} />
         <Stack.Screen name="Motivation" component={Motivation} />

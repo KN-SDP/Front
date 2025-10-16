@@ -1,6 +1,7 @@
 // AuthService.js
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import jwtDecode from 'jwt-decode';
 
 const BASE_URL = 'http://43.202.209.189:8081';
 const TOKEN_KEY = 'accessToken';
@@ -38,12 +39,19 @@ const AuthService = {
       await AsyncStorage.setItem(TOKEN_KEY, token);
       api.defaults.headers.common.Authorization = `Bearer ${token}`;
     }
-    // ✅ 사용자 정보는 토큰만 쓰므로 null로 저장
+
+    // JWT Decoding
+    // const decoded = jwtDecode(token);
+    // payload구조는 백에 따라 다름
     const userPayload = {
       userId: null,
       email: null,
       username: null,
       nickname: null,
+      // userId: decoded.userId || null,
+      // email: decoded.email || null,
+      // username: decoded.username || null,
+      // nickname: decoded.nickname || null,
     };
     await AsyncStorage.setItem(USER_KEY, JSON.stringify(userPayload));
 
@@ -67,7 +75,7 @@ const AuthService = {
   },
 
   /** ID 찾기 */
-  async findId({ name, phoneNum, birth }) {
+  async FindId({ name, phoneNum, birth }) {
     try {
       const res = await anon.post('/users/recover-id', {
         name,

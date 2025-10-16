@@ -13,6 +13,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import AuthService from './AuthService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoginView from './view/LoginView';
+import jwtDecode from 'jwt-decode';
 
 // ✅ 플랫폼별 Alert 유틸
 function showAlert(title, message, buttons) {
@@ -59,10 +60,14 @@ export default function Login({ navigation }) {
       });
 
       const savedToken = await AsyncStorage.getItem('accessToken');
-      // const decodedToken = jwtDecode(savedToken);
+      // if (savedToken) {
+      //   const decodedToken = jwtDecode(savedToken);
+      //   console.log('decoding toking:', decodedToken);
+      //   showAlert('로그인', `환영합니다, ${data?.username || '사용자'} 님!`);
+      // }
       console.log('token: ', savedToken);
 
-      showAlert('로그인', `환영합니다, ${data?.username || '사용자'} 님!`);
+      // showAlert('로그인', `환영합니다, ${data?.username || '사용자'} 님!`);
       navigation.replace('Home');
     } catch (e) {
       const status = e?.response?.status;

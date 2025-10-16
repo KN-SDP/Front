@@ -352,6 +352,16 @@ export default function Home({ navigation }) {
             </View>
           </Pressable>
         ))}
+        <Pressable
+          style={{
+            paddingVertical: 12,
+            borderTopWidth: 1,
+            borderColor: '#ccc',
+          }}
+          onPress={() => navigation.replace('Login')}
+        >
+          <Text style={{ color: 'red', fontWeight: '700' }}>로그아웃</Text>
+        </Pressable>
       </Animated.View>
     </View>
   );

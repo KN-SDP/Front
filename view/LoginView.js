@@ -98,7 +98,7 @@ export default function LoginView({
               <Text style={styles.linkText}>회원가입</Text>
             </Pressable>
             <View style={styles.divider} />
-            <Pressable onPress={() => navigation.navigate('findId')}>
+            <Pressable onPress={() => navigation.navigate('FindId')}>
               <Text style={styles.linkText}>ID 찾기</Text>
             </Pressable>
             <View style={styles.divider} />

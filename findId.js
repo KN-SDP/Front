@@ -102,7 +102,7 @@ export default function FindId({ navigation }) {
         birth: birth, // 서버: YYYYMMDD
       };
 
-      const response = await AuthService.findId(payload);
+      const response = await AuthService.FindId(payload);
       // 기대 응답: { success: boolean, email?: string, message?: string }
 
       if (response?.success && response?.email) {
