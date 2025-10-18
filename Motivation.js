@@ -35,7 +35,10 @@ export default function Motivation({ navigation }) {
         <Text style={styles.message}>
           마음에 꼭 드는 목표를 정하는 순간,{'\n'}저축은 더 즐거워져요.
         </Text>
-        <Pressable style={styles.addButton}>
+        <Pressable
+          style={styles.addButton}
+          onPress={() => navigation.navigate('AddMotivation')}
+        >
           <Ionicons name="add" size={30} color="#555" />
         </Pressable>
       </View>

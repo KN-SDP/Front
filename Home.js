@@ -63,8 +63,9 @@ export default function Home({ navigation }) {
     );
   }
 
+  // 내 폰 기준으로 헤더 쪽 (SmartLedger 아이콘) 이 안보여서 padding으로 내림.
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+    <View style={{ flex: 1, backgroundColor: '#fff', paddingTop: 40 }}>
       {/* 상단 바 */}
       <View
         style={{
