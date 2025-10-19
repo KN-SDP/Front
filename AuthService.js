@@ -99,6 +99,76 @@ const AuthService = {
       };
     }
   },
+
+  /** 비밀번호 찾기 */
+  async findPw(payload) {
+    try {
+      const res = await anon.post('/users/recover-password', {
+        email: payload.email,
+        name: payload.name,
+        birth: payload.birth,
+        phone: payload.phoneNum,
+      });
+
+      if (res.status === 200) {
+        return { success: true, message: res.data.message };
+      }
+
+      return {
+        success: false,
+        message: res.data?.message || '비밀번호 찾기 실패',
+      };
+    } catch (err) {
+      const data = err.response?.data;
+
+      if (data?.message) {
+        return { success: false, message: data.message };
+      }
+
+      return {
+        success: false,
+        message: '서버와의 통신 중 문제가 발생했습니다.',
+      };
+    }
+  },
+
+  /** 비밀번호 재설정 */
+  async resetPw(payload) {
+    try {
+      const res = await anon.post('/users/recover-password/reset', {
+        email: payload.email,
+        newPassword: payload.newPassword,
+        checkedPassword: payload.checkedPassword,
+      });
+
+      if (res.status === 200) {
+        return {
+          success: true,
+          message: res.data?.message || '비밀번호가 성공적으로 변경되었습니다.',
+        };
+      }
+
+      return {
+        success: false,
+        message: res.data?.message || '비밀번호 재설정 실패',
+      };
+    } catch (err) {
+      const data = err.response?.data;
+
+      if (data?.message) {
+        return {
+          success: false,
+          message: data.message,
+        };
+      }
+
+      console.error('resetPw Error:', err.message);
+      return {
+        success: false,
+        message: '서버와의 통신 중 문제가 발생했습니다.',
+      };
+    }
+  },
 };
 
 export default AuthService;

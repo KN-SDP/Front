@@ -1,4 +1,4 @@
-// FindPw.js 현재 findId.js코드 복붙
+// FindPw.js
 import React, { useState } from 'react';
 import {
   View,
@@ -39,12 +39,12 @@ const formatPhoneNumber = (input) => {
   )}`;
 };
 
-// 생년월일 자동 슬래시(YYYY/MM/DD)
+// 생년월일 자동 하이픈(YYYY-MM-DD)
 const formatBirthDate = (input) => {
   const numbers = onlyDigits(input);
   if (numbers.length < 5) return numbers;
-  if (numbers.length < 7) return `${numbers.slice(0, 4)}/${numbers.slice(4)}`;
-  return `${numbers.slice(0, 4)}/${numbers.slice(4, 6)}/${numbers.slice(6, 8)}`;
+  if (numbers.length < 7) return `${numbers.slice(0, 4)}-${numbers.slice(4)}`;
+  return `${numbers.slice(0, 4)}-${numbers.slice(4, 6)}-${numbers.slice(6, 8)}`;
 };
 
 // YYYYMMDD 유효성 검사
@@ -59,8 +59,8 @@ const isValidYMD = (yyyymmdd) => {
   );
 };
 
-export default function FindId({ navigation }) {
-  // const ID
+export default function FindPw({ navigation }) {
+  const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [phoneNum, setPhoneNum] = useState('');
   const [birth, setBirth] = useState('');
@@ -71,19 +71,20 @@ export default function FindId({ navigation }) {
   const handleBirthChange = (text) => setBirth(formatBirthDate(text));
 
   const validateInputs = () => {
+    if (!email.trim()) return '이메일(ID)을 입력해주세요.';
+    if (!/\S+@\S+\.\S+/.test(email))
+      return '유효한 이메일 주소를 입력해주세요.';
     if (!name.trim()) return '이름을 입력해주세요.';
-    if (!/^\d{3}-\d{3,4}-\d{4}$/.test(phoneNum)) {
+    if (!/^\d{3}-\d{3,4}-\d{4}$/.test(phoneNum))
       return '전화번호 형식이 올바르지 않습니다. (예: 010-1234-5678)';
-    }
-    if (!/^\d{4}\/\d{2}\/\d{2}$/.test(birth)) {
-      return '생년월일 형식이 올바르지 않습니다. (예: 1990/01/01)';
-    }
-    const ymd = onlyDigits(birth); // YYYYMMDD
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(birth))
+      return '생년월일 형식이 올바르지 않습니다. (예: 1990-01-01)';
+    const ymd = onlyDigits(birth);
     if (!isValidYMD(ymd)) return '유효한 생년월일이 아닙니다.';
     return '';
   };
 
-  const handleFindId = async () => {
+  const handleFindPw = async () => {
     const validationError = validateInputs();
     if (validationError) {
       setError(validationError);
@@ -97,23 +98,23 @@ export default function FindId({ navigation }) {
       setError('');
 
       const payload = {
+        email: email.trim(),
         name: name.trim(),
-        phoneNum: onlyDigits(phoneNum), // 서버: 숫자만
-        birth: onlyDigits(birth), // 서버: YYYYMMDD
+        phoneNum: onlyDigits(phoneNum),
+        birth: birth,
       };
 
-      const response = await AuthService.findId(payload);
-      // 기대 응답: { success: boolean, email?: string, message?: string }
+      const response = await AuthService.findPw(payload);
 
-      if (response?.success && response?.email) {
-        showAlert('아이디 찾기 결과', `가입된 이메일: ${response.email}`);
+      if (response.success) {
+        showAlert('비밀번호 재설정 안내', response.message);
+        navigation.navigate('ResetPw');
       } else {
-        const msg = response?.message || '아이디를 찾을 수 없습니다.';
-        setError(msg);
-        showAlert('알림', msg);
+        setError(response.message);
+        showAlert('알림', response.message);
       }
     } catch (err) {
-      console.error('Find ID Error:', err);
+      console.error('Find PW Error:', err);
       const msg = '서버 요청 중 문제가 발생했습니다.';
       setError(msg);
       showAlert('오류', msg);
@@ -128,19 +129,29 @@ export default function FindId({ navigation }) {
       <View style={styles.header}>
         <Pressable
           onPress={() => navigation?.goBack?.()}
-          accessibilityRole="button"
-          accessibilityLabel="뒤로가기"
           hitSlop={8}
           style={styles.backBtn}
         >
           <Ionicons name="chevron-back" size={28} color="black" />
         </Pressable>
-        <Text style={styles.headerTitle}>ID 찾기</Text>
+        <Text style={styles.headerTitle}>PW 찾기</Text>
       </View>
 
       {/* 폼 */}
       <View style={styles.form}>
         {!!error && <Text style={styles.errorText}>{error}</Text>}
+
+        <Text style={styles.label}>ID</Text>
+        <TextInput
+          style={styles.input}
+          value={email}
+          onChangeText={setEmail}
+          placeholder="예) kangnam@naver.com"
+          placeholderTextColor="#aaa"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          textContentType="emailAddress"
+        />
 
         <Text style={styles.label}>이름</Text>
         <TextInput
@@ -150,7 +161,6 @@ export default function FindId({ navigation }) {
           placeholder="이름을 입력하세요."
           placeholderTextColor="#aaa"
           autoCapitalize="words"
-          autoCorrect={false}
           textContentType="name"
         />
 
@@ -162,10 +172,7 @@ export default function FindId({ navigation }) {
           placeholder="전화번호를 입력하세요."
           placeholderTextColor="#aaa"
           keyboardType={Platform.OS === 'web' ? 'default' : 'number-pad'}
-          inputMode="numeric" // 웹 키패드 힌트
-          autoCorrect={false}
-          autoCapitalize="none"
-          textContentType="telephoneNumber"
+          inputMode="numeric"
           maxLength={13}
         />
 
@@ -174,13 +181,10 @@ export default function FindId({ navigation }) {
           style={styles.input}
           value={birth}
           onChangeText={handleBirthChange}
-          placeholder="yyyy/mm/dd"
+          placeholder="yyyy-mm-dd"
           placeholderTextColor="#aaa"
           keyboardType={Platform.OS === 'web' ? 'default' : 'number-pad'}
           inputMode="numeric"
-          autoCorrect={false}
-          autoCapitalize="none"
-          textContentType="none"
           maxLength={10}
         />
       </View>
@@ -188,13 +192,11 @@ export default function FindId({ navigation }) {
       {/* 버튼 */}
       <Pressable
         style={[styles.button, submitting && { opacity: 0.6 }]}
-        onPress={handleFindId}
+        onPress={handleFindPw}
         disabled={submitting}
-        accessibilityRole="button"
-        accessibilityLabel="아이디 찾기"
       >
         <Text style={styles.buttonText}>
-          {submitting ? '확인 중...' : 'ID 찾기'}
+          {submitting ? '전송 중...' : '비밀번호 재설정'}
         </Text>
       </Pressable>
 
@@ -215,9 +217,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 32,
   },
-  backBtn: {
-    padding: 4,
-  },
+  backBtn: { padding: 4 },
   headerTitle: { fontSize: 20, fontWeight: 'bold', marginLeft: 8 },
   form: { flex: 1 },
   label: { fontWeight: 'bold', marginBottom: 6 },
