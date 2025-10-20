@@ -26,6 +26,8 @@ export default function ResetPw({ navigation }) {
   const [confirmPw, setConfirmPw] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [showNewPw, setShowNewPw] = useState(false);
+  const [showConfirmPw, setShowConfirmPw] = useState(false);
 
   // 비밀번호 유효성 검사
   const validatePassword = (pw) => {
@@ -107,26 +109,44 @@ export default function ResetPw({ navigation }) {
         /> */}
 
         <Text style={styles.label}>새 비밀번호</Text>
-        <TextInput
-          style={styles.input}
-          value={newPw}
-          onChangeText={setNewPw}
-          placeholder="새 비밀번호를 입력하세요."
-          placeholderTextColor="#aaa"
-          secureTextEntry
-          autoCapitalize="none"
-        />
+        <View style={styles.inputWrapper}>
+          <TextInput
+            style={styles.inputField}
+            value={newPw}
+            onChangeText={setNewPw}
+            placeholder="새 비밀번호를 입력하세요."
+            placeholderTextColor="#aaa"
+            secureTextEntry={!showNewPw}
+            autoCapitalize="none"
+          />
+          <Pressable onPress={() => setShowNewPw(!showNewPw)}>
+            <Ionicons
+              name={showNewPw ? 'eye' : 'eye-off'}
+              size={22}
+              color="#444"
+            />
+          </Pressable>
+        </View>
 
         <Text style={styles.label}>비밀번호 확인</Text>
-        <TextInput
-          style={styles.input}
-          value={confirmPw}
-          onChangeText={setConfirmPw}
-          placeholder="비밀번호를 다시 입력하세요."
-          placeholderTextColor="#aaa"
-          secureTextEntry
-          autoCapitalize="none"
-        />
+        <View style={styles.inputWrapper}>
+          <TextInput
+            style={styles.inputField}
+            value={confirmPw}
+            onChangeText={setConfirmPw}
+            placeholder="비밀번호를 다시 입력하세요."
+            placeholderTextColor="#aaa"
+            secureTextEntry={!showConfirmPw}
+            autoCapitalize="none"
+          />
+          <Pressable onPress={() => setShowConfirmPw(!showConfirmPw)}>
+            <Ionicons
+              name={showConfirmPw ? 'eye' : 'eye-off'}
+              size={22}
+              color="#444"
+            />
+          </Pressable>
+        </View>
       </View>
 
       {/* 버튼 */}
@@ -170,4 +190,16 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#999',
+    marginBottom: 24,
+  },
+  inputField: {
+    flex: 1,
+    paddingVertical: 6,
+    fontSize: 16,
+  },
 });
