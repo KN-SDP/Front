@@ -330,9 +330,16 @@ export default function Home({ navigation }) {
         <Text style={{ marginBottom: 12 }}>
           {user?.name || '사용자'} 님 환영합니다.
         </Text>
-        <Pressable style={{ marginBottom: 20 }}>
+        <Pressable
+          style={{ marginBottom: 20 }}
+          onPress={() => {
+            toggleSidebar(); // 사이드바 닫기
+            navigation.navigate('MyPage'); // 마이페이지로 이동
+          }}
+        >
           <Text>마이페이지</Text>
         </Pressable>
+
         {[
           '자동결제 알리미',
           '동기부여',
