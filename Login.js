@@ -13,7 +13,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import AuthService from './AuthService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoginView from './view/LoginView';
-import jwtDecode from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 
 // ✅ 플랫폼별 Alert 유틸
 function showAlert(title, message, buttons) {
@@ -54,22 +54,24 @@ export default function Login({ navigation }) {
     setError('');
     setSubmitting(true);
     try {
-      const data = await AuthService.login({
+      const token = await AuthService.login({
         email: email.trim(),
         password,
       });
 
-      const savedToken = await AsyncStorage.getItem('accessToken');
-      // if (savedToken) {
-      //   const decodedToken = jwtDecode(savedToken);
-      //   console.log('decoding toking:', decodedToken);
-      //   showAlert('로그인', `환영합니다, ${data?.username || '사용자'} 님!`);
-      // }
-      console.log('token: ', savedToken);
-
-      // showAlert('로그인', `환영합니다, ${data?.username || '사용자'} 님!`);
-      navigation.replace('Home');
+      if (token) {
+        const decodedToken = jwtDecode(token);
+        console.log('✅ decoded token:', decodedToken);
+        showAlert(
+          '로그인',
+          `환영합니다, ${decodedToken.nickname || '사용자'} 님!`
+        );
+        navigation.replace('Home');
+      } else {
+        showAlert('로그인 실패', '서버로부터 토큰을 받지 못했습니다.');
+      }
     } catch (e) {
+      console.error('❌ 로그인 실패 상세:', e);
       const status = e?.response?.status;
       const code = e?.response?.data?.error_code;
       const message = e?.response?.data?.message;

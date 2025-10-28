@@ -1,11 +1,10 @@
 // AuthService.js
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import jwtDecode from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 
 const BASE_URL = 'http://43.202.209.189:8081';
 const TOKEN_KEY = 'accessToken';
-const USER_KEY = 'userInfo'; // ✅ 사용자 정보 저장 키
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -39,22 +38,6 @@ const AuthService = {
       await AsyncStorage.setItem(TOKEN_KEY, token);
       api.defaults.headers.common.Authorization = `Bearer ${token}`;
     }
-
-    // JWT Decoding
-    // const decoded = jwtDecode(token);
-    // payload구조는 백에 따라 다름
-    const userPayload = {
-      userId: null,
-      email: null,
-      username: null,
-      nickname: null,
-      // userId: decoded.userId || null,
-      // email: decoded.email || null,
-      // username: decoded.username || null,
-      // nickname: decoded.nickname || null,
-    };
-    await AsyncStorage.setItem(USER_KEY, JSON.stringify(userPayload));
-
     return token;
   },
 
@@ -63,14 +46,25 @@ const AuthService = {
     return AsyncStorage.getItem(TOKEN_KEY);
   },
   async getCurrentUser() {
-    const raw = await AsyncStorage.getItem(USER_KEY);
-    return raw ? JSON.parse(raw) : null;
+    try {
+      const token = await AsyncStorage.getItem(TOKEN_KEY);
+      if (!token) return null;
+
+      const decoded = jwtDecode(token);
+      return {
+        email: decoded.email || null,
+        username: decoded.username || null,
+        nickname: decoded.nickname || null,
+      };
+    } catch (error) {
+      console.error('getCurrenUser error: ', error);
+      return null;
+    }
   },
 
   /** 로그아웃 */
   async clearAuth() {
     await AsyncStorage.removeItem(TOKEN_KEY);
-    await AsyncStorage.removeItem(USER_KEY);
     delete api.defaults.headers.common.Authorization;
   },
 

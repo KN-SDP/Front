@@ -328,7 +328,7 @@ export default function Home({ navigation }) {
           나의 Smart Ledger
         </Text>
         <Text style={{ marginBottom: 12 }}>
-          {user?.name || '사용자'} 님 환영합니다.
+          {user?.nickname || '사용자'} 님 환영합니다.
         </Text>
         <Pressable
           style={{ marginBottom: 20 }}
