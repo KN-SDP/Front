@@ -138,7 +138,7 @@ export default function Home({ navigation }) {
           )}
         </View>
 
-        {/* 동기부여 카드 */}
+        {/* 목적 */}
         <View style={{ marginTop: 20, marginHorizontal: 16 }}>
           <View
             style={{
@@ -148,7 +148,7 @@ export default function Home({ navigation }) {
               marginBottom: 8,
             }}
           >
-            <Text style={{ fontSize: 16, fontWeight: '700' }}>동기부여</Text>
+            <Text style={{ fontSize: 16, fontWeight: '700' }}>목적</Text>
             <Text style={{ fontSize: 16, fontWeight: '700' }}>{'>'}</Text>
           </View>
           <ScrollView
@@ -278,7 +278,7 @@ export default function Home({ navigation }) {
           style={{ alignItems: 'center' }}
         >
           <Ionicons name="heart" size={24} />
-          <Text>동기</Text>
+          <Text>목적</Text>
         </Pressable>
         <Pressable
           onPress={() => navigation.navigate('History')}
@@ -342,7 +342,7 @@ export default function Home({ navigation }) {
 
         {[
           '자동결제 알리미',
-          '동기부여',
+          '목적',
           '자산 / 내역',
           '예산 관리',
           '자동 지출 설정 / 월급 설정',
@@ -366,7 +366,10 @@ export default function Home({ navigation }) {
             borderTopWidth: 1,
             borderColor: '#ccc',
           }}
-          onPress={() => navigation.replace('Login')}
+          onPress={async () => {
+            await AuthService.clearAuth();
+            navigation.replace('Login');
+          }}
         >
           <Text style={{ color: 'red', fontWeight: '700' }}>로그아웃</Text>
         </Pressable>

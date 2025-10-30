@@ -3,7 +3,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode';
 
-const BASE_URL = 'http://43.202.209.189:8081';
+const BASE_URL = 'https://knusdpsl.mooo.com';
 const TOKEN_KEY = 'accessToken';
 
 const api = axios.create({
@@ -15,6 +15,10 @@ const anon = axios.create({
   baseURL: BASE_URL,
   headers: { 'Content-Type': 'application/json', accept: 'application/json' },
 });
+
+console.log('[AuthService] BASE_URL const =', BASE_URL);
+console.log('[AuthService] api.baseURL =', api.defaults.baseURL);
+console.log('[AuthService] anon.baseURL =', anon.defaults.baseURL);
 
 (async () => {
   try {

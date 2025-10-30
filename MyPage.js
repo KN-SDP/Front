@@ -67,7 +67,7 @@ export default function MyPage({ navigation }) {
           style={{ alignItems: 'center' }}
         >
           <Ionicons name="heart" size={24} />
-          <Text>동기</Text>
+          <Text>목적</Text>
         </Pressable>
         <Pressable
           onPress={() => navigation.navigate('History')}
