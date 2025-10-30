@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import Login from './Login';
 import SignUp from './SignUp';
 import FindId from './FindId';
@@ -14,10 +16,24 @@ import MyPage from './MyPage';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
+  const [initialRoute, setInitialRoute] = useState('loading');
+
+  useEffect(() => {
+    const checkLogin = async () => {
+      const token = await AsyncStorage.getItem('accessToken');
+      setInitialRoute(token ? 'Home' : 'Login');
+    };
+
+    checkLogin();
+  }, []);
+
+  // 로딩 동안 null 렌더
+  if (initialRoute === 'loading') return null;
+
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Login"
+        initialRouteName={initialRoute} // 토큰 기반으로 결정
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="Login" component={Login} />
