@@ -3,10 +3,14 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode';
 
-const isWeb = typeof window !== 'undefined';
-const BASE_URL = isWeb
-  ? '' // ✅ 웹(로컬/Cloudflare)은 프록시 또는 same-origin 사용
-  : 'https://knusdpsl.mooo.com'; // ✅ 모바일 앱에서는 실제 서버 호출
+const BASE_URL =
+  process.env.EXPO_PUBLIC_API_URL ||
+  (typeof window !== 'undefined'
+    ? window.location.origin
+    : 'http://localhost:8081');
+
+console.log('✅ EXPO_PUBLIC_API_URL =', process.env.EXPO_PUBLIC_API_URL);
+console.log('✅ BASE_URL =', BASE_URL);
 
 const TOKEN_KEY = 'accessToken';
 
@@ -19,10 +23,6 @@ const anon = axios.create({
   baseURL: BASE_URL,
   headers: { 'Content-Type': 'application/json', accept: 'application/json' },
 });
-
-console.log('[AuthService] BASE_URL const =', BASE_URL);
-console.log('[AuthService] api.baseURL =', api.defaults.baseURL);
-console.log('[AuthService] anon.baseURL =', anon.defaults.baseURL);
 
 (async () => {
   try {
