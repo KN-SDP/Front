@@ -3,7 +3,11 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode';
 
-const BASE_URL = 'https://knusdpsl.mooo.com';
+const isWeb = typeof window !== 'undefined';
+const BASE_URL = isWeb
+  ? '' // ✅ 웹(로컬/Cloudflare)은 프록시 또는 same-origin 사용
+  : 'https://knusdpsl.mooo.com'; // ✅ 모바일 앱에서는 실제 서버 호출
+
 const TOKEN_KEY = 'accessToken';
 
 const api = axios.create({
