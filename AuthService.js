@@ -24,10 +24,16 @@ const anon = axios.create({
   headers: { 'Content-Type': 'application/json', accept: 'application/json' },
 });
 
+// ✅ 앱 시작 시 토큰 로드 (웹 + 모바일)
 (async () => {
   try {
-    const token = await AsyncStorage.getItem(TOKEN_KEY);
-    if (token) api.defaults.headers.common.Authorization = `Bearer ${token}`;
+    let token = await AsyncStorage.getItem(TOKEN_KEY);
+    if (!token && typeof window !== 'undefined') {
+      token = localStorage.getItem(TOKEN_KEY);
+    }
+    if (token) {
+      api.defaults.headers.common.Authorization = `Bearer ${token}`;
+    }
   } catch {}
 })();
 
