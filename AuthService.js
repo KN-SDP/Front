@@ -3,14 +3,23 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode';
 
-const BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL ||
-  (typeof window !== 'undefined'
-    ? window.location.origin
-    : 'http://localhost:8081');
+let BASE_URL;
 
-console.log('✅ EXPO_PUBLIC_API_URL =', process.env.EXPO_PUBLIC_API_URL);
-console.log('✅ BASE_URL =', BASE_URL);
+if (process.env.EXPO_PUBLIC_API_URL) {
+  BASE_URL = process.env.EXPO_PUBLIC_API_URL;
+} else {
+  // ✅ 모바일 Expo 실행 시
+  if (typeof window === 'undefined') {
+    BASE_URL = 'https://knusdpsl.mooo.com'; // 실 서버 URL
+  } else {
+    // ✅ 웹에서 로컬 실행 시
+    BASE_URL = window.location.origin.includes('localhost')
+      ? 'https://knusdpsl.mooo.com' // 로컬 웹도 실제 서버 접근
+      : window.location.origin;
+  }
+}
+
+console.log('🔗 BASE_URL =', BASE_URL);
 
 const TOKEN_KEY = 'accessToken';
 
