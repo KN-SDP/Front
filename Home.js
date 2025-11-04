@@ -71,14 +71,23 @@ export default function Home({ navigation }) {
       <View style={{ padding: 10, alignItems: 'flex-end' }}>
         <Pressable
           onPress={async () => {
+            console.log('🚪 로그아웃 클릭');
+
             await AuthService.clearAuth();
-            navigation.replace('Login');
-          }}
-          style={{
-            backgroundColor: '#ff4d4d',
-            paddingVertical: 6,
-            paddingHorizontal: 12,
-            borderRadius: 8,
+
+            // 웹 완전 초기화용
+            if (typeof window !== 'undefined') {
+              console.log('🧹 localStorage clear');
+              localStorage.removeItem('accessToken');
+            }
+
+            const t = await AuthService.getToken();
+            console.log('🧪 남은 토큰:', t);
+
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Login' }],
+            });
           }}
         >
           <Text style={{ color: '#fff', fontWeight: '700' }}>로그아웃</Text>
