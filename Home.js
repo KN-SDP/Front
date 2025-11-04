@@ -67,6 +67,24 @@ export default function Home({ navigation }) {
   return (
     <View style={{ flex: 1, backgroundColor: '#fff', paddingTop: 40 }}>
       {/* 상단 바 */}
+      {/* ✅ 테스트용 로그아웃 버튼 */}
+      <View style={{ padding: 10, alignItems: 'flex-end' }}>
+        <Pressable
+          onPress={async () => {
+            await AuthService.clearAuth();
+            navigation.replace('Login');
+          }}
+          style={{
+            backgroundColor: '#ff4d4d',
+            paddingVertical: 6,
+            paddingHorizontal: 12,
+            borderRadius: 8,
+          }}
+        >
+          <Text style={{ color: '#fff', fontWeight: '700' }}>로그아웃</Text>
+        </Pressable>
+      </View>
+
       <View
         style={{
           flexDirection: 'row',
