@@ -67,33 +67,6 @@ export default function Home({ navigation }) {
   return (
     <View style={{ flex: 1, backgroundColor: '#fff', paddingTop: 40 }}>
       {/* 상단 바 */}
-      {/* ✅ 테스트용 로그아웃 버튼 */}
-      <View style={{ padding: 10, alignItems: 'flex-end' }}>
-        <Pressable
-          onPress={async () => {
-            console.log('🚪 로그아웃 클릭');
-
-            await AuthService.clearAuth();
-
-            // 웹 완전 초기화용
-            if (typeof window !== 'undefined') {
-              console.log('🧹 localStorage clear');
-              localStorage.removeItem('accessToken');
-            }
-
-            const t = await AuthService.getToken();
-            console.log('🧪 남은 토큰:', t);
-
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'Login' }],
-            });
-          }}
-        >
-          <Text style={{ color: '#fff', fontWeight: '700' }}>로그아웃</Text>
-        </Pressable>
-      </View>
-
       <View
         style={{
           flexDirection: 'row',
