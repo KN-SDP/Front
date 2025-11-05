@@ -138,7 +138,7 @@ export default function Home({ navigation }) {
           )}
         </View>
 
-        {/* 목적 */}
+        {/* 목표 */}
         <View style={{ marginTop: 20, marginHorizontal: 16 }}>
           <View
             style={{
@@ -148,7 +148,7 @@ export default function Home({ navigation }) {
               marginBottom: 8,
             }}
           >
-            <Text style={{ fontSize: 16, fontWeight: '700' }}>목적</Text>
+            <Text style={{ fontSize: 16, fontWeight: '700' }}>목표</Text>
             <Text style={{ fontSize: 16, fontWeight: '700' }}>{'>'}</Text>
           </View>
           <ScrollView
@@ -278,7 +278,7 @@ export default function Home({ navigation }) {
           style={{ alignItems: 'center' }}
         >
           <Ionicons name="heart" size={24} />
-          <Text>목적</Text>
+          <Text>목표</Text>
         </Pressable>
         <Pressable
           onPress={() => navigation.navigate('History')}
@@ -342,7 +342,7 @@ export default function Home({ navigation }) {
 
         {[
           '자동결제 알리미',
-          '목적',
+          '목표',
           '자산 / 내역',
           '예산 관리',
           '자동 지출 설정 / 월급 설정',

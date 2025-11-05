@@ -7,10 +7,13 @@ import {
   TouchableOpacity,
   ScrollView,
   Pressable,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
+import AuthService from './AuthService';
 
+// ✅ 날짜 한국어 설정
 LocaleConfig.locales['kr'] = {
   monthNames: [
     '1월',
@@ -45,7 +48,7 @@ LocaleConfig.locales['kr'] = {
     '월요일',
     '화요일',
     '수요일',
-    '목요일',
+    '수요일',
     '금요일',
     '토요일',
   ],
@@ -57,8 +60,31 @@ LocaleConfig.defaultLocale = 'kr';
 export default function AddMotivation({ navigation }) {
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
-  const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+  const handleSubmit = async () => {
+    if (!title.trim()) return Alert.alert('알림', '제목을 입력해주세요.');
+    if (!price.trim() || Number(price) <= 0)
+      return Alert.alert('알림', '금액을 올바르게 입력해주세요.');
+    if (!endDate) return Alert.alert('알림', '마감 날짜를 선택해주세요.');
+
+    const payload = {
+      title: title.trim(),
+      imageUrl: null, // 아직 이미지 업로드 없으므로 null
+      targetAmount: Number(price),
+      deadline: endDate,
+    };
+
+    const res = await AuthService.createGoal(payload);
+
+    if (res.success) {
+      Alert.alert('완료', '목표가 등록되었습니다.');
+      navigation.navigate('Motivation');
+    } else {
+      Alert.alert('오류', res.message || '문제가 발생했습니다.');
+    }
+  };
+
   return (
     <ScrollView style={styles.container}>
       {/* 상단 헤더 */}
@@ -66,116 +92,48 @@ export default function AddMotivation({ navigation }) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back-outline" size={28} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Smart Ledger</Text>
+        <Text style={styles.headerTitle}>새 목표 만들기</Text>
         <View style={{ width: 28 }} />
       </View>
 
-      {/* 제목 입력 */}
+      {/* 제목 */}
       <Text style={styles.label}>제목</Text>
       <TextInput
         style={styles.input}
-        placeholder="예) 갤럭시 워치X"
+        placeholder="예) 닌텐도 스위치"
         value={title}
         onChangeText={setTitle}
       />
 
-      {/* 제한 기간 */}
-      <Text style={styles.label}>🕒 제한 기간</Text>
-      <View style={styles.dateRow}>
-        <Text style={{ fontSize: 16 }}>{startDate || '시작일 선택'}</Text>
-        <Text style={{ fontSize: 16 }}> ➝ </Text>
-        <Text style={{ fontSize: 16 }}>{endDate || '종료일 선택'}</Text>
-      </View>
+      {/* 날짜 */}
+      <Text style={styles.label}>목표 날짜 선택</Text>
+      <Text style={{ fontSize: 16 }}>{endDate || '날짜를 선택하세요'}</Text>
 
-      {/* 달력 */}
       <Calendar
         onDayPress={(day) => {
-          if (!startDate) {
-            setStartDate(day.dateString);
-          } else if (startDate && !endDate) {
-            setEndDate(day.dateString);
-          } else {
-            setStartDate(day.dateString);
-            setEndDate('');
-          }
+          setEndDate(day.dateString);
         }}
         markedDates={{
-          [startDate]: { selected: true, selectedColor: 'black' },
-          [endDate]: { selected: true, selectedColor: 'gray' },
+          [endDate]: { selected: true, selectedColor: 'black' },
         }}
-        theme={{
-          todayTextColor: 'black',
-        }}
+        theme={{ todayTextColor: 'black' }}
         style={{ marginTop: 15 }}
       />
 
-      {/* 가격 입력 */}
-      <Text style={styles.label}>가격</Text>
+      {/* 금액 */}
+      <Text style={styles.label}>목표 금액</Text>
       <TextInput
         style={styles.input}
-        placeholder="예) 200,000"
+        placeholder="예) 400000"
         keyboardType="numeric"
         value={price}
         onChangeText={setPrice}
       />
 
-      {/* 사진첨부 */}
-      <Text style={styles.label}>사진첨부</Text>
-      <View style={styles.photoRow}>
-        <TouchableOpacity style={styles.photoButton}>
-          <Text>내 Phone</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.photoButton}>
-          <Text>카메라</Text>
-        </TouchableOpacity>
-      </View>
-      <View style={styles.photoBox} />
-
-      {/* 하단 탭바 */}
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-around',
-          alignItems: 'center',
-          height: 60,
-          borderTopWidth: 1,
-          borderTopColor: '#000',
-          backgroundColor: '#fff',
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-        }}
-      >
-        <Pressable
-          onPress={() => navigation.navigate('Home')}
-          style={{ alignItems: 'center' }}
-        >
-          <Ionicons name="home" size={24} />
-          <Text>홈</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => navigation.navigate('Motivation')}
-          style={{ alignItems: 'center' }}
-        >
-          <Ionicons name="heart" size={24} />
-          <Text>동기</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => navigation.navigate('History')}
-          style={{ alignItems: 'center' }}
-        >
-          <Ionicons name="stats-chart" size={24} />
-          <Text>내역</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => navigation.navigate('Assets')}
-          style={{ alignItems: 'center' }}
-        >
-          <Ionicons name="logo-usd" size={24} />
-          <Text>자산</Text>
-        </Pressable>
-      </View>
+      {/* 저장 버튼 */}
+      <TouchableOpacity style={styles.saveButton} onPress={handleSubmit}>
+        <Text style={styles.saveButtonText}>저장하기</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -187,7 +145,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 20,
-    paddingTop: 40, // 내 폰 기준으로 헤더 쪽 (SmartLedger 아이콘) 이 안보여서 padding으로 내림.
+    paddingTop: 40,
   },
   headerTitle: { fontSize: 20, fontWeight: 'bold' },
   label: { fontSize: 16, fontWeight: '600', marginTop: 20 },
@@ -197,35 +155,16 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     fontSize: 16,
   },
-  dateRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 10,
-  },
-  photoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
-  },
-  photoButton: {
-    borderWidth: 1,
-    borderColor: '#000',
-    padding: 10,
+  saveButton: {
+    marginTop: 30,
+    backgroundColor: '#000',
+    padding: 15,
     borderRadius: 8,
-    width: '45%',
     alignItems: 'center',
   },
-  photoBox: {
-    width: '100%',
-    height: 200,
-    backgroundColor: '#eee',
-    marginTop: 10,
-    borderRadius: 10,
-  },
-  monthTitle: {
+  saveButtonText: {
+    color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginTop: 10,
+    fontWeight: 'bold',
   },
 });

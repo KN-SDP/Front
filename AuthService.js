@@ -203,6 +203,99 @@ const AuthService = {
       };
     }
   },
+
+  // 목표 생성
+  // 목표 생성
+  async createGoal(data) {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      if (!token) return { success: false, message: '로그인이 필요합니다.' };
+
+      const res = await api.post('/goals', data, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      return { success: true, message: res.data.message };
+    } catch (err) {
+      console.log('Create goal error:', err.response?.data);
+
+      const status = err.response?.data?.status_code;
+      const message = err.response?.data?.message || '오류가 발생했습니다.';
+
+      if (status === 401) {
+        return { success: false, message: '로그인이 필요합니다.' };
+      }
+
+      return { success: false, message };
+    }
+  },
+
+  // 목표 조회
+  async getGoals() {
+    try {
+      const token = await AsyncStorage.getItem(TOKEN_KEY);
+      if (!token) {
+        return { success: false, message: '로그인이 필요합니다.' };
+      }
+
+      const res = await api.get('/goals', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      return {
+        success: true,
+        data: res.data,
+      };
+    } catch (err) {
+      console.log('❌ getGoals Error:', err);
+
+      if (err.response) {
+        const { status_code, message } = err.response.data;
+
+        // 인증 오류
+        if (status_code === 401) {
+          return { success: false, message: '로그인이 필요합니다.' };
+        }
+
+        // 잘못된 ID
+        if (status_code === 400) {
+          return { success: false, message: message || '잘못된 요청입니다.' };
+        }
+
+        // 목표 없음
+        if (status_code === 404) {
+          return { success: false, message: '등록된 목표가 없습니다.' };
+        }
+
+        return {
+          success: false,
+          message: message || '서버 오류가 발생했습니다.',
+        };
+      }
+
+      return { success: false, message: '네트워크 오류' };
+    }
+  },
+  // 목표 삭제
+  async deleteGoal(goalId) {
+    try {
+      const res = await api.delete(`/goals/${goalId}`);
+
+      // 204 No Content ➜ data 없을 가능성 있음
+      return {
+        success: true,
+        message: res.data?.message || '목표가 삭제되었습니다.',
+      };
+    } catch (err) {
+      const data = err.response?.data;
+      console.error('deleteGoal Error:', data || err.message);
+
+      return {
+        success: false,
+        message: data?.message || '삭제 중 오류가 발생했습니다.',
+      };
+    }
+  },
 };
 
 export default AuthService;
