@@ -10,6 +10,7 @@ import {
   Alert,
   Platform,
 } from 'react-native';
+import { useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import AuthService from './AuthService';
 
@@ -20,7 +21,10 @@ const showAlert = (title, message) => {
 };
 
 export default function ResetPw({ navigation }) {
-  const [email, setEmail] = useState('');
+  const route = useRoute();
+  const passedToken = route.params?.resetToken || '';
+
+  const [resetToken, setResetToken] = useState(passedToken);
   const [code, setCode] = useState(''); // 인증번호 (있다면)
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
@@ -38,7 +42,7 @@ export default function ResetPw({ navigation }) {
   };
 
   const handleResetPw = async () => {
-    if (!email.trim()) return showAlert('알림', '이메일을 입력해주세요.');
+    if (!resetToken.trim()) return showAlert('알림', '토큰 없음');
     if (!newPw.trim()) return showAlert('알림', '새 비밀번호를 입력해주세요.');
     if (!confirmPw.trim())
       return showAlert('알림', '비밀번호 확인을 입력해주세요.');
@@ -54,7 +58,7 @@ export default function ResetPw({ navigation }) {
       setError('');
 
       const payload = {
-        email: email.trim(),
+        resetToken: resetToken.trim(),
         newPassword: newPw,
         checkedPassword: confirmPw, // ✅ 백엔드 명세에 맞게 key 수정
       };
@@ -73,6 +77,7 @@ export default function ResetPw({ navigation }) {
     } finally {
       setSubmitting(false);
     }
+    console.log('passedToken:', resetToken);
   };
 
   return (
@@ -87,7 +92,7 @@ export default function ResetPw({ navigation }) {
 
       {/* 입력 폼 */}
       <View style={styles.form}>
-        <Text style={styles.label}>이메일</Text>
+        {/* <Text style={styles.label}>이메일</Text>
         <TextInput
           style={styles.input}
           value={email}
@@ -96,7 +101,7 @@ export default function ResetPw({ navigation }) {
           placeholderTextColor="#aaa"
           keyboardType="email-address"
           autoCapitalize="none"
-        />
+        /> */}
 
         {/* <Text style={styles.label}>인증번호</Text>
         <TextInput

@@ -107,8 +107,11 @@ export default function FindPw({ navigation }) {
       const response = await AuthService.findPw(payload);
 
       if (response.success) {
+        console.log('resetToken:', response.resetToken);
         showAlert('비밀번호 재설정 안내', response.message);
-        navigation.navigate('ResetPw');
+        navigation.navigate('ResetPw', {
+          resetToken: response.resetToken,
+        });
       } else {
         setError(response.message);
         showAlert('알림', response.message);

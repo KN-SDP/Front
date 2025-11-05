@@ -87,8 +87,16 @@ const AuthService = {
 
   /** 로그아웃 */
   async clearAuth() {
-    await AsyncStorage.removeItem(TOKEN_KEY);
-    delete api.defaults.headers.common.Authorization;
+    try {
+      await AsyncStorage.removeItem('accessToken');
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('accessToken'); // ✅ 웹도 삭제
+      }
+      delete api.defaults.headers.common.Authorization;
+      console.log('✅ Token removed (mobile & web)');
+    } catch (e) {
+      console.log('❌ Token remove failed', e);
+    }
   },
 
   /** ID 찾기 */
@@ -127,8 +135,17 @@ const AuthService = {
         phone: payload.phoneNum,
       });
 
+      // ✅ 응답에서 토큰 꺼내기 (키 이름 변동 대비)
+      const data = res.data || {};
+      const resetToken =
+        data.resetToken ??
+        data.token ??
+        data.reset_token ??
+        data.result?.resetToken ??
+        null;
+
       if (res.status === 200) {
-        return { success: true, message: res.data.message };
+        return { success: true, message: res.data.message, resetToken };
       }
 
       return {
@@ -153,7 +170,7 @@ const AuthService = {
   async resetPw(payload) {
     try {
       const res = await anon.post('/users/recover-password/reset', {
-        email: payload.email,
+        resetToken: payload.resetToken,
         newPassword: payload.newPassword,
         checkedPassword: payload.checkedPassword,
       });
