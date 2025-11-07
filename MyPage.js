@@ -1,18 +1,28 @@
 // MyPage.js
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  StyleSheet,
-  SafeAreaView,
-} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Pressable, StyleSheet, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AuthService from './AuthService'; // ✅ 추가
 
 export default function MyPage({ navigation }) {
-  const [nickname, setNickname] = useState('1000sh');
-  const [email, setEmail] = useState('kangnam@naver.com');
+  const [nickname, setNickname] = useState('');
+  const [email, setEmail] = useState('');
+
+  // ✅ 토큰에서 유저 정보 가져오기
+  useEffect(() => {
+    (async () => {
+      try {
+        const user = await AuthService.getCurrentUser();
+        console.log('✅ 현재 로그인 유저:', user);
+
+        // ⚠️ 백엔드 JWT 구조에 따라 키 이름 확인 필요
+        setNickname(user?.nickname || user?.userNickname || '');
+        setEmail(user?.userEmail || user?.email || '');
+      } catch (e) {
+        console.error('❌ 유저 정보 불러오기 실패:', e);
+      }
+    })();
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -40,45 +50,32 @@ export default function MyPage({ navigation }) {
         <Text style={styles.reviewText}>앱 리뷰 작성</Text>
       </View>
 
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-around',
-          alignItems: 'center',
-          height: 60,
-          borderTopWidth: 1,
-          borderTopColor: '#000',
-          backgroundColor: '#fff',
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-        }}
-      >
+      {/* 하단 탭 */}
+      <View style={styles.bottomTab}>
         <Pressable
           onPress={() => navigation.navigate('Home')}
-          style={{ alignItems: 'center' }}
+          style={styles.tabItem}
         >
           <Ionicons name="home" size={24} />
           <Text>홈</Text>
         </Pressable>
         <Pressable
           onPress={() => navigation.navigate('Motivation')}
-          style={{ alignItems: 'center' }}
+          style={styles.tabItem}
         >
           <Ionicons name="heart" size={24} />
           <Text>목표</Text>
         </Pressable>
         <Pressable
           onPress={() => navigation.navigate('History')}
-          style={{ alignItems: 'center' }}
+          style={styles.tabItem}
         >
           <Ionicons name="stats-chart" size={24} />
           <Text>내역</Text>
         </Pressable>
         <Pressable
           onPress={() => navigation.navigate('Assets')}
-          style={{ alignItems: 'center' }}
+          style={styles.tabItem}
         >
           <Ionicons name="logo-usd" size={24} />
           <Text>자산</Text>

@@ -14,13 +14,17 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import AuthService from './AuthService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const SIDEBAR_WIDTH = SCREEN_WIDTH * 0.3;
+const SIDEBAR_WIDTH = SCREEN_WIDTH * 0.7;
 
 export default function Home({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const sidebarAnim = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
+
+  // ✅ 목표 목록 상태 추가
+  const [goals, setGoals] = useState([]);
+  const [goalLoading, setGoalLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
@@ -29,14 +33,28 @@ export default function Home({ navigation }) {
         const u = await AuthService.getCurrentUser();
         if (!mounted) return;
         setUser(u);
+        await loadGoals();
       } finally {
-        if (mounted) setLoading(false);
+        if (mounted) {
+          setLoading(false);
+          setGoalLoading(false);
+        }
       }
     })();
     return () => {
       mounted = false;
     };
   }, []);
+
+  // ✅ 목표 불러오기 함수
+  const loadGoals = async () => {
+    try {
+      const res = await AuthService.getGoals();
+      if (res.success) setGoals(res.data);
+    } catch (err) {
+      console.error('목표 불러오기 실패:', err);
+    }
+  };
 
   const toggleSidebar = () => {
     if (sidebarVisible) {
@@ -138,7 +156,7 @@ export default function Home({ navigation }) {
           )}
         </View>
 
-        {/* 목표 */}
+        {/* ✅ 목표 (API 연동 완료) */}
         <View style={{ marginTop: 20, marginHorizontal: 16 }}>
           <View
             style={{
@@ -149,39 +167,50 @@ export default function Home({ navigation }) {
             }}
           >
             <Text style={{ fontSize: 16, fontWeight: '700' }}>목표</Text>
-            <Text style={{ fontSize: 16, fontWeight: '700' }}>{'>'}</Text>
+            <Pressable onPress={() => navigation.navigate('Motivation')}>
+              <Text style={{ fontSize: 16, fontWeight: '700' }}>{'>'}</Text>
+            </Pressable>
           </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            pagingEnabled // 카드 단위 스와이프 느낌
-            snapToAlignment="start"
-            decelerationRate="fast"
-          >
-            {Array(3)
-              .fill(0)
-              .map((_, idx) => (
+
+          {goalLoading ? (
+            <ActivityIndicator size="small" />
+          ) : goals.length === 0 ? (
+            <Text style={{ textAlign: 'center', color: '#777' }}>
+              등록된 목표가 없습니다.
+            </Text>
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              pagingEnabled
+              snapToAlignment="start"
+              decelerationRate="fast"
+            >
+              {goals.map((item) => (
                 <View
-                  key={idx}
+                  key={item.goalId}
                   style={{
                     backgroundColor: '#E5E5EA',
-                    width: 180, // 조금 넓게 해서 스와이프 체감
+                    width: 180,
                     padding: 12,
                     marginRight: 12,
                     borderRadius: 12,
                   }}
                 >
                   <Text style={{ fontWeight: '700', marginBottom: 4 }}>
-                    갤럭시 워치X
+                    {item.title}
                   </Text>
-                  <Text>200,000원</Text>
-                  <Text style={{ marginTop: 8 }}>달성률 : 57%</Text>
+                  <Text>{item.targetAmount.toLocaleString()}원</Text>
+                  <Text style={{ marginTop: 8 }}>
+                    달성률 : {Math.round(item.progressRate * 100)}%
+                  </Text>
                   <Text style={{ fontSize: 12, color: '#555' }}>
-                    25.10.10 달성 목표
+                    {item.deadline ? `${item.deadline} 목표` : ''}
                   </Text>
                 </View>
               ))}
-          </ScrollView>
+            </ScrollView>
+          )}
         </View>
 
         {/* 자산 / 내역 */}
@@ -295,6 +324,7 @@ export default function Home({ navigation }) {
           <Text>자산</Text>
         </Pressable>
       </View>
+
       {/* 사이드바 */}
       {sidebarVisible && (
         <TouchableWithoutFeedback onPress={toggleSidebar}>
@@ -320,55 +350,106 @@ export default function Home({ navigation }) {
           width: SIDEBAR_WIDTH,
           backgroundColor: '#fff',
           paddingTop: 40,
-          paddingHorizontal: 16,
           transform: [{ translateX: sidebarAnim }],
+          borderTopRightRadius: 20,
+          borderBottomRightRadius: 20,
+          overflow: 'hidden',
+          shadowColor: '#000',
+          shadowOffset: { width: 2, height: 0 },
+          shadowOpacity: 0.15,
+          shadowRadius: 4,
+          elevation: 5,
         }}
       >
-        <Text style={{ fontSize: 18, fontWeight: '700', marginBottom: 20 }}>
-          나의 Smart Ledger
-        </Text>
-        <Text style={{ marginBottom: 12 }}>
-          {user?.nickname || '사용자'} 님 환영합니다.
-        </Text>
-        <Pressable
-          style={{ marginBottom: 20 }}
-          onPress={() => {
-            toggleSidebar(); // 사이드바 닫기
-            navigation.navigate('MyPage'); // 마이페이지로 이동
+        {/* 상단 제목 + 설정 아이콘 */}
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 20,
+            paddingHorizontal: 16,
           }}
         >
-          <Text>마이페이지</Text>
-        </Pressable>
+          <Text style={{ fontSize: 18, fontWeight: '700' }}>
+            나의 Smart Ledger
+          </Text>
+          <Ionicons name="settings-outline" size={22} color="#000" />
+        </View>
 
+        {/* 사용자 인사 + 마이페이지 버튼 */}
+        <View style={{ paddingHorizontal: 16, marginBottom: 20 }}>
+          <Text style={{ fontSize: 14, marginBottom: 8 }}>
+            {user?.nickname || '사용자'} 님 환영합니다.
+          </Text>
+          <Pressable
+            onPress={() => {
+              toggleSidebar();
+              navigation.navigate('MyPage');
+            }}
+            style={{
+              backgroundColor: '#000',
+              paddingVertical: 6,
+              paddingHorizontal: 20,
+              borderRadius: 8,
+              alignSelf: 'flex-start',
+            }}
+          >
+            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>
+              마이페이지
+            </Text>
+          </Pressable>
+        </View>
+
+        {/* 메뉴 목록 */}
         {[
-          '자동결제 알리미',
-          '목표',
-          '자산 / 내역',
-          '예산 관리',
-          '자동 지출 설정 / 월급 설정',
+          { label: '자동결제 알리미', route: 'AutoPay' },
+          { label: '동기부여', route: 'Motivation' },
+          { label: '자산 / 내역', route: 'History' },
+          { label: '예산 관리', route: 'Budget' },
+          { label: '자동 지출 설정 / 월급 설정', route: 'Setting' },
         ].map((item, idx) => (
-          <Pressable key={idx} style={{ marginBottom: 12 }}>
+          <Pressable
+            key={idx}
+            onPress={() => {
+              toggleSidebar();
+              navigation.navigate(item.route);
+            }}
+          >
             <View
               style={{
                 flexDirection: 'row',
                 justifyContent: 'space-between',
                 alignItems: 'center',
+                borderTopWidth: 1,
+                borderColor: '#000',
+                paddingVertical: 12,
+                paddingHorizontal: 16,
               }}
             >
-              <Text>{item}</Text>
-              <Text>{'>'}</Text>
+              <Text style={{ fontSize: 14 }}>{item.label}</Text>{' '}
+              {/* ✅ label만 출력 */}
+              <Ionicons name="chevron-forward-outline" size={16} color="#000" />
             </View>
           </Pressable>
         ))}
-        <Pressable
+
+        {/* 로그아웃 위 구분선 + 로그아웃 버튼 */}
+        <View
           style={{
-            paddingVertical: 12,
-            borderTopWidth: 1,
-            borderColor: '#ccc',
+            borderTopWidth: 1, // ✅ 검정색 구분선
+            borderColor: '#000',
           }}
+        />
+
+        <Pressable
           onPress={async () => {
             await AuthService.clearAuth();
             navigation.replace('Login');
+          }}
+          style={{
+            paddingVertical: 16,
+            paddingHorizontal: 16,
           }}
         >
           <Text style={{ color: 'red', fontWeight: '700' }}>로그아웃</Text>

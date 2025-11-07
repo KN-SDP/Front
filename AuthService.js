@@ -2,21 +2,21 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode';
+import { Platform } from 'react-native';
 
 let BASE_URL;
 
 if (process.env.EXPO_PUBLIC_API_URL) {
   BASE_URL = process.env.EXPO_PUBLIC_API_URL;
+} else if (Platform.OS === 'web') {
+  // ✅ 웹 환경
+  const origin = window?.location?.origin || 'https://knusdpsl.mooo.com';
+  BASE_URL = origin.includes('localhost')
+    ? 'https://knusdpsl.mooo.com' // 로컬 웹도 실제 서버로 접근
+    : origin;
 } else {
-  // ✅ 모바일 Expo 실행 시
-  if (typeof window === 'undefined') {
-    BASE_URL = 'https://knusdpsl.mooo.com'; // 실 서버 URL
-  } else {
-    // ✅ 웹에서 로컬 실행 시
-    BASE_URL = window.location.origin.includes('localhost')
-      ? 'https://knusdpsl.mooo.com' // 로컬 웹도 실제 서버 접근
-      : window.location.origin;
-  }
+  // ✅ iOS / Android 환경
+  BASE_URL = 'https://knusdpsl.mooo.com';
 }
 
 console.log('🔗 BASE_URL =', BASE_URL);
@@ -204,7 +204,6 @@ const AuthService = {
     }
   },
 
-  // 목표 생성
   // 목표 생성
   async createGoal(data) {
     try {
