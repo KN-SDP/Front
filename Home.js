@@ -156,7 +156,7 @@ export default function Home({ navigation }) {
           )}
         </View>
 
-        {/* ✅ 목표 (API 연동 완료) */}
+        {/* 목표 */}
         <View style={{ marginTop: 20, marginHorizontal: 16 }}>
           <View
             style={{
@@ -427,7 +427,7 @@ export default function Home({ navigation }) {
                 paddingHorizontal: 16,
               }}
             >
-              <Text style={{ fontSize: 14 }}>{item.label}</Text>{' '}
+              <Text style={{ fontSize: 14 }}>{item.label}</Text>
               {/* ✅ label만 출력 */}
               <Ionicons name="chevron-forward-outline" size={16} color="#000" />
             </View>
