@@ -22,18 +22,19 @@ export default function App() {
   const [initialRoute, setInitialRoute] = useState('loading');
 
   useEffect(() => {
-    useEffect(() => {
-      async function loadFonts() {
-        await Font.loadAsync(Ionicons.font);
-      }
-      loadFonts();
-    }, []);
     const checkLogin = async () => {
       const token = await AsyncStorage.getItem('accessToken');
       setInitialRoute(token ? 'Home' : 'Login');
     };
 
     checkLogin();
+  }, []);
+
+  useEffect(() => {
+    async function loadFonts() {
+      await Font.loadAsync(Ionicons.font);
+    }
+    loadFonts();
   }, []);
 
   // 로딩 동안 null 렌더
