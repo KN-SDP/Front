@@ -1,0 +1,24 @@
+# 1. 모든 폰트 파일 Brotli 압축 완전 차단 + 정확한 MIME 타입
+*.ttf
+  Cache-Control: no-transform
+  Content-Type: font/ttf
+
+*.woff
+  Cache-Control: no-transform
+  Content-Type: font/woff
+
+*.woff2
+  Cache-Control: no-transform
+  Content-Type: font/woff2
+
+# 2. react-native-vector-icons 폰트 폴더 전체 적용 (이게 핵심!)
+/assets/*
+  Cache-Control: no-transform
+
+/node_modules/react-native-vector-icons/Fonts/*
+  Cache-Control: no-transform
+  Content-Type: font/ttf
+
+# 3. CORS도 확실하게 뚫어놓기
+/*
+  Access-Control-Allow-Origin: *
