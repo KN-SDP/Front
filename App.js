@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
 import * as Font from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
+import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -22,17 +22,18 @@ export default function App() {
   const [initialRoute, setInitialRoute] = useState('loading');
 
   useEffect(() => {
+    useEffect(() => {
+      async function loadFonts() {
+        await Font.loadAsync(Ionicons.font);
+      }
+      loadFonts();
+    }, []);
     const checkLogin = async () => {
       const token = await AsyncStorage.getItem('accessToken');
       setInitialRoute(token ? 'Home' : 'Login');
     };
 
     checkLogin();
-  }, []);
-  useEffect(() => {
-    Font.loadAsync({
-      ...Ionicons.font,
-    });
   }, []);
 
   // 로딩 동안 null 렌더
