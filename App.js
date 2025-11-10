@@ -15,6 +15,7 @@ import AddMotivation from './AddMotivation';
 import ResetPw from './ResetPw';
 import MyPage from './MyPage';
 import History from './History';
+import HistoryDetail from './HistoryDetail';
 
 const Stack = createNativeStackNavigator();
 
@@ -56,6 +57,7 @@ export default function App() {
         <Stack.Screen name="ResetPw" component={ResetPw} />
         <Stack.Screen name="MyPage" component={MyPage} />
         <Stack.Screen name="History" component={History} />
+        <Stack.Screen name="HistoryDetail" component={HistoryDetail} />
       </Stack.Navigator>
     </NavigationContainer>
   );

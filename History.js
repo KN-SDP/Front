@@ -169,7 +169,16 @@ export default function History({ navigation }) {
           {/* 1~12월 카드 */}
           <View style={styles.monthGrid}>
             {months.map((m, i) => (
-              <View key={m.key} style={styles.monthBox}>
+              <Pressable
+                key={m.key}
+                style={styles.monthBox}
+                onPress={() =>
+                  navigation.navigate('HistoryDetail', {
+                    selectedMonth: m.key,
+                    selectedYear: year,
+                  })
+                }
+              >
                 <Text style={styles.monthLabel}>{m.label}</Text>
                 {i === 0 ? (
                   <>
@@ -180,7 +189,7 @@ export default function History({ navigation }) {
                 ) : (
                   <View style={{ height: 40 }} />
                 )}
-              </View>
+              </Pressable>
             ))}
           </View>
         </ScrollView>
@@ -200,12 +209,18 @@ export default function History({ navigation }) {
           </View>
 
           {daysOfWeek.map((d) => (
-            <View key={d.key} style={styles.card}>
+            <Pressable
+              key={d.key}
+              style={styles.card}
+              onPress={() =>
+                navigation.navigate('HistoryDetail', { selectedDate: d.key })
+              }
+            >
               <Text style={styles.cardTitle}>{d.label}</Text>
               <Text style={styles.cardText}>수입</Text>
               <Text style={styles.cardText}>지출</Text>
               <Text style={styles.cardText}>합계</Text>
-            </View>
+            </Pressable>
           ))}
         </ScrollView>
       )}
