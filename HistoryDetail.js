@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Modal,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import dayjs from 'dayjs';
@@ -18,13 +19,14 @@ dayjs.locale('ko');
 export default function HistoryDetail({ route, navigation }) {
   const { selectedDate, selectedMonth, selectedYear } = route.params || {};
 
-  // ✅ 상태값들
   const [showAddModal, setShowAddModal] = useState(false);
   const [mainType, setMainType] = useState('지출');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [paymentType, setPaymentType] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // ✅ ENUM 매핑
   const paymentMap = {
@@ -52,7 +54,6 @@ export default function HistoryDetail({ route, navigation }) {
     기타: 14,
   };
 
-  // ✅ 수입 카테고리 추가
   const incomeCategories = {
     용돈: 21,
     월급: 22,
@@ -66,14 +67,81 @@ export default function HistoryDetail({ route, navigation }) {
     ? dayjs(selectedDate).format('YYYY년 M월 D일 dddd')
     : `${selectedYear}년 ${selectedMonth}월`;
 
-  const totalIncome = 1500000;
-  const totalExpense = 500000;
+  // ✅ 거래내역 가져오기
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        setLoading(true);
+        const dateParam = selectedDate || dayjs().format('YYYY-MM-DD');
+        const res = await AuthService.getLedgerList(dateParam);
+
+        if (res && Array.isArray(res.data)) {
+          setTransactions(res.data);
+        } else {
+          console.warn('⚠️ 응답 형식이 배열이 아님:', res);
+          setTransactions([]);
+        }
+      } catch (err) {
+        console.error('거래내역 불러오기 실패:', err);
+        setTransactions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTransactions();
+  }, [selectedDate]);
+
+  const totalIncome = transactions
+    .filter((t) => t.transactionType === 'INCOME' || t.mainType === '수입')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const totalExpense = transactions
+    .filter((t) => t.transactionType === 'EXPENSE' || t.mainType === '지출')
+    .reduce((sum, t) => sum + t.amount, 0);
   const balance = totalIncome - totalExpense;
 
-  const transactions = [
-    { id: 1, title: '강남대 재맞고 수당', amount: 1000000, time: '08:10' },
-    { id: 2, title: '스타벅스', amount: -500000, time: '08:15' },
-  ];
+  // ✅ 날짜별 내역 렌더링
+  const renderTransactions = () => {
+    if (loading) return <ActivityIndicator style={{ marginTop: 20 }} />;
+    if (transactions.length === 0)
+      return (
+        <Text style={{ textAlign: 'center', marginTop: 20, color: '#666' }}>
+          내역이 없습니다.
+        </Text>
+      );
+
+    return transactions.map((item) => (
+      <View key={item.id || item.transactionId} style={styles.listItem}>
+        <View>
+          <Text style={styles.itemTitle}>{item.description}</Text>
+          <Text style={styles.itemTime}>
+            {item.time
+              ? item.time
+              : item.createdAt
+              ? dayjs(item.createdAt).format('HH:mm')
+              : ''}
+          </Text>
+        </View>
+        <Text
+          style={[
+            styles.itemAmount,
+            {
+              color:
+                item.transactionType === 'INCOME' || item.mainType === '수입'
+                  ? '#007700'
+                  : '#cc0000',
+            },
+          ]}
+        >
+          {item.transactionType === 'INCOME' || item.mainType === '수입'
+            ? '+'
+            : '-'}
+          {item.amount.toLocaleString()}원
+        </Text>
+      </View>
+    ));
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -88,6 +156,7 @@ export default function HistoryDetail({ route, navigation }) {
 
       <Text style={styles.dateText}>{dateText}</Text>
 
+      {/* ✅ 요약 박스 */}
       <View style={styles.summaryBox}>
         <Text style={styles.balanceText}>{balance.toLocaleString()}원</Text>
         <Text style={styles.subText}>
@@ -98,6 +167,7 @@ export default function HistoryDetail({ route, navigation }) {
         </Text>
       </View>
 
+      {/* ✅ 거래내역 */}
       <ScrollView contentContainerStyle={styles.listContainer}>
         <View style={styles.listHeader}>
           <Text style={styles.listTitle}>전체</Text>
@@ -105,24 +175,7 @@ export default function HistoryDetail({ route, navigation }) {
             <Ionicons name="add-circle-outline" size={28} color="#000" />
           </Pressable>
         </View>
-
-        {transactions.map((item) => (
-          <View key={item.id} style={styles.listItem}>
-            <View>
-              <Text style={styles.itemTitle}>{item.title}</Text>
-              <Text style={styles.itemTime}>{item.time}</Text>
-            </View>
-            <Text
-              style={[
-                styles.itemAmount,
-                { color: item.amount > 0 ? '#007700' : '#cc0000' },
-              ]}
-            >
-              {item.amount > 0 ? '+' : ''}
-              {item.amount.toLocaleString()}원
-            </Text>
-          </View>
-        ))}
+        {renderTransactions()}
       </ScrollView>
 
       {/* ✅ 모달 */}
