@@ -36,31 +36,28 @@ export default function HistoryDetail({ route, navigation }) {
     계좌이체: 'BANK_TRANSFER',
   };
 
-  // ✅ 카테고리 매핑
-  const expenseCategories = {
-    비상금: 1,
-    주거: 2,
-    보험: 3,
-    통신비: 4,
-    식비: 5,
-    생활용품: 6,
-    패션: 7,
-    건강: 8,
-    자기계발: 9,
-    자동차: 10,
-    여행: 11,
-    문화생활: 12,
-    경조사: 13,
-    기타: 14,
+  // ✅ 실제 DB 기준으로 맞춘 매핑
+  const incomeCategories = {
+    월급: 1,
+    상여: 2,
+    부수입: 3,
+    투자소득: 4,
+    기타소득: 5,
   };
 
-  const incomeCategories = {
-    용돈: 21,
-    월급: 22,
-    상여: 23,
-    부수입: 24,
-    투자소득: 25,
-    기타: 26,
+  const expenseCategories = {
+    비상금: 6,
+    주거: 7,
+    용돈: 8,
+    보험: 9,
+    통신비: 10,
+    식비: 11,
+    생활용품: 12,
+    꾸밈비: 13,
+    건강: 14,
+    자기계발: 15,
+    자동차: 16,
+    여행: 17,
   };
 
   const dateText = selectedDate
@@ -68,36 +65,37 @@ export default function HistoryDetail({ route, navigation }) {
     : `${selectedYear}년 ${selectedMonth}월`;
 
   // ✅ 거래내역 가져오기
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        setLoading(true);
-        const dateParam = selectedDate || dayjs().format('YYYY-MM-DD');
-        const res = await AuthService.getLedgerList(dateParam);
+  const fetchTransactions = async () => {
+    try {
+      setLoading(true);
+      const dateParam = selectedDate || dayjs().format('YYYY-MM-DD');
+      const res = await AuthService.getLedgerList(dateParam);
 
-        if (res && Array.isArray(res.data)) {
-          setTransactions(res.data);
-        } else {
-          console.warn('⚠️ 응답 형식이 배열이 아님:', res);
-          setTransactions([]);
-        }
-      } catch (err) {
-        console.error('거래내역 불러오기 실패:', err);
+      if (res && Array.isArray(res.data)) {
+        console.log('🧩 서버 응답 구조:', res.data);
+
+        setTransactions(res.data);
+      } else {
+        console.warn('⚠️ 응답 형식이 배열이 아님:', res);
         setTransactions([]);
-      } finally {
-        setLoading(false);
       }
-    };
-
+    } catch (err) {
+      console.error('거래내역 불러오기 실패:', err);
+      setTransactions([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
     fetchTransactions();
   }, [selectedDate]);
 
   const totalIncome = transactions
-    .filter((t) => t.transactionType === 'INCOME' || t.mainType === '수입')
+    .filter((t) => t.type === 'INCOME' || t.mainType === '수입')
     .reduce((sum, t) => sum + t.amount, 0);
 
   const totalExpense = transactions
-    .filter((t) => t.transactionType === 'EXPENSE' || t.mainType === '지출')
+    .filter((t) => t.type === 'EXPENSE' || t.mainType === '지출')
     .reduce((sum, t) => sum + t.amount, 0);
   const balance = totalIncome - totalExpense;
 
@@ -128,19 +126,46 @@ export default function HistoryDetail({ route, navigation }) {
             styles.itemAmount,
             {
               color:
-                item.transactionType === 'INCOME' || item.mainType === '수입'
+                item.type?.trim?.().toUpperCase?.() === 'INCOME' ||
+                item.mainType === '수입'
                   ? '#007700'
                   : '#cc0000',
             },
           ]}
         >
-          {item.transactionType === 'INCOME' || item.mainType === '수입'
+          {item.type?.trim?.().toUpperCase?.() === 'INCOME' ||
+          item.mainType === '수입'
             ? '+'
             : '-'}
-          {item.amount.toLocaleString()}원
+          {Number(item.amount).toLocaleString()}원
         </Text>
+
+        {/* 🗑️ 삭제 아이콘 추가 */}
+        <Pressable onPress={() => handleDelete(item.id)}>
+          <Ionicons name="trash-outline" size={22} color="#333" />
+        </Pressable>
       </View>
     ));
+  };
+  const handleDelete = async (id) => {
+    try {
+      if (!id) return alert('삭제할 내역의 ID가 없습니다.');
+
+      setLoading(true);
+      const res = await AuthService.deleteLedger(id);
+
+      if (res.success) {
+        alert('✅ 내역이 삭제되었습니다.');
+        await fetchTransactions(); // 새로고침
+      } else {
+        alert('❌ 삭제 실패: ' + res.message);
+      }
+    } catch (err) {
+      console.error('삭제 오류:', err);
+      alert('서버 통신 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -168,7 +193,7 @@ export default function HistoryDetail({ route, navigation }) {
       </View>
 
       {/* ✅ 거래내역 */}
-      <ScrollView contentContainerStyle={styles.listContainer}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
         <View style={styles.listHeader}>
           <Text style={styles.listTitle}>전체</Text>
           <Pressable onPress={() => setShowAddModal(true)}>
@@ -341,6 +366,7 @@ export default function HistoryDetail({ route, navigation }) {
                     setDescription('');
                     setPaymentType(null);
                     setSelectedCategory(null);
+                    await fetchTransactions();
                   } else {
                     alert('❌ 등록 실패: ' + res.message);
                   }

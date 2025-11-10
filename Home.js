@@ -251,7 +251,7 @@ export default function Home({ navigation }) {
                   textAlign: 'center',
                 }}
               >
-                900,000
+                0
               </Text>
               <Text style={{ textAlign: 'center' }}>수입</Text>
             </View>
@@ -266,14 +266,12 @@ export default function Home({ navigation }) {
               <Text
                 style={{ color: 'red', fontWeight: '700', textAlign: 'center' }}
               >
-                600,000
+                0
               </Text>
               <Text style={{ textAlign: 'center' }}>지출</Text>
             </View>
             <View style={{ flex: 1, padding: 12 }}>
-              <Text style={{ fontWeight: '700', textAlign: 'center' }}>
-                300,000
-              </Text>
+              <Text style={{ fontWeight: '700', textAlign: 'center' }}>0</Text>
               <Text style={{ textAlign: 'center' }}>합계</Text>
             </View>
           </View>

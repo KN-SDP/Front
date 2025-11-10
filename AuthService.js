@@ -367,6 +367,82 @@ const AuthService = {
       };
     }
   },
+  // ✅ 가계부 내역 삭제 (정상 작동용)
+  async deleteLedger(ledgerId) {
+    try {
+      const token = await AsyncStorage.getItem(TOKEN_KEY);
+      if (!token) {
+        return {
+          success: false,
+          statusCode: 401,
+          errorCode: 'UNAUTHORIZED',
+          message: '로그인이 필요합니다.',
+        };
+      }
+
+      // ✅ DELETE 요청 (POST 아님)
+      const res = await api.delete(`/ledger/${ledgerId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // ✅ Bearer 접두어 복원
+          'Content-Type': 'application/json',
+          accept: 'application/json',
+        },
+      });
+
+      console.log('✅ 서버 응답:', res.data || res.status);
+
+      // ✅ 서버가 204 (No Content) 반환 시
+      if (res.status === 204) {
+        return {
+          success: true,
+          statusCode: 204,
+          message: '삭제되었습니다.',
+        };
+      }
+
+      // ✅ 200 응답이지만 내부 메시지가 포함된 경우
+      const data = res.data || {};
+      return {
+        success: data.status_code === 200,
+        statusCode: data.status_code || res.status,
+        message: data.message || '삭제 성공',
+      };
+    } catch (err) {
+      const data = err.response?.data || {};
+      console.error('❌ deleteLedger Error:', data);
+
+      // ✅ 에러 상태별 메시지 처리
+      if (err.response?.status === 400) {
+        return {
+          success: false,
+          statusCode: 400,
+          message: data.message || 'ID 형식이 잘못되었습니다.',
+        };
+      }
+
+      if (err.response?.status === 404) {
+        return {
+          success: false,
+          statusCode: 404,
+          message: data.message || '해당 가계부 내역을 찾을 수 없습니다.',
+        };
+      }
+
+      if (err.response?.status === 401) {
+        return {
+          success: false,
+          statusCode: 401,
+          message: data.message || '인증이 필요합니다.',
+        };
+      }
+
+      return {
+        success: false,
+        statusCode: err.response?.status || 500,
+        message: data.message || '서버 오류가 발생했습니다.',
+      };
+    }
+  },
 };
 
 export default AuthService;
