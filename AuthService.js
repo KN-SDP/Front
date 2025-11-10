@@ -295,6 +295,78 @@ const AuthService = {
       };
     }
   },
+  // ✅ 지출/수입 내역 추가
+  async createExpense(payload) {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      if (!token) {
+        return {
+          success: false,
+          statusCode: 401,
+          errorCode: 'UNAUTHORIZED',
+          message: '로그인이 필요합니다.',
+        };
+      }
+
+      const res = await api.post('/ledger', payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // ✅ 정상 응답 (204)
+      if (res.status === 204) {
+        return { success: true, statusCode: 204 };
+      }
+
+      return {
+        success: true,
+        statusCode: res.status,
+        data: res.data,
+      };
+    } catch (err) {
+      const data = err.response?.data || {};
+      console.error('❌ createExpense Error:', data);
+
+      return {
+        success: false,
+        statusCode: data.status_code || err.response?.status,
+        errorCode: data.error_code,
+        message: data.message || '등록 중 오류가 발생했습니다.',
+      };
+    }
+  },
+  // ✅ 내역 조회 (특정 날짜)
+  async getLedgerList(date) {
+    try {
+      const token = await AsyncStorage.getItem(TOKEN_KEY);
+      if (!token) {
+        return {
+          success: false,
+          statusCode: 401,
+          errorCode: 'UNAUTHORIZED',
+          message: '로그인이 필요합니다.',
+        };
+      }
+
+      const res = await api.get('/ledger', {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { date }, // 서버가 YYYY-MM-DD 형식 기대
+      });
+
+      // 서버 응답 형태에 따라 items 또는 배열로 처리
+      const data = Array.isArray(res.data) ? res.data : res.data?.items || [];
+      return { success: true, data };
+    } catch (err) {
+      const data = err.response?.data || {};
+      console.error('❌ getLedgerList Error:', data);
+      return {
+        success: false,
+        statusCode: data.status_code || err.response?.status,
+        errorCode: data.error_code,
+        message: data.message || '내역 조회 중 오류가 발생했습니다.',
+        data: [],
+      };
+    }
+  },
 };
 
 export default AuthService;

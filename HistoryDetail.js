@@ -12,20 +12,60 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
+import AuthService from './AuthService';
 dayjs.locale('ko');
 
 export default function HistoryDetail({ route, navigation }) {
   const { selectedDate, selectedMonth, selectedYear } = route.params || {};
+
+  // ✅ 상태값들
   const [showAddModal, setShowAddModal] = useState(false);
-  const [mainType, setMainType] = useState('지출'); // 수입 / 지출
-  const [subType, setSubType] = useState('이체'); // 이체 / 저축
+  const [mainType, setMainType] = useState('지출');
   const [amount, setAmount] = useState('');
+  const [description, setDescription] = useState('');
+  const [paymentType, setPaymentType] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+
+  // ✅ ENUM 매핑
+  const paymentMap = {
+    현금: 'CASH',
+    카드: 'CREDIT_CARD',
+    상품권: 'GIFT_CERTIFICATE',
+    계좌이체: 'BANK_TRANSFER',
+  };
+
+  // ✅ 카테고리 매핑
+  const expenseCategories = {
+    비상금: 1,
+    주거: 2,
+    보험: 3,
+    통신비: 4,
+    식비: 5,
+    생활용품: 6,
+    패션: 7,
+    건강: 8,
+    자기계발: 9,
+    자동차: 10,
+    여행: 11,
+    문화생활: 12,
+    경조사: 13,
+    기타: 14,
+  };
+
+  // ✅ 수입 카테고리 추가
+  const incomeCategories = {
+    용돈: 21,
+    월급: 22,
+    상여: 23,
+    부수입: 24,
+    투자소득: 25,
+    기타: 26,
+  };
 
   const dateText = selectedDate
     ? dayjs(selectedDate).format('YYYY년 M월 D일 dddd')
     : `${selectedYear}년 ${selectedMonth}월`;
 
-  // 예시 데이터
   const totalIncome = 1500000;
   const totalExpense = 500000;
   const balance = totalIncome - totalExpense;
@@ -37,7 +77,7 @@ export default function HistoryDetail({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* ===== 상단 헤더 ===== */}
+      {/* 상단 헤더 */}
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={24} color="#000" />
@@ -46,10 +86,8 @@ export default function HistoryDetail({ route, navigation }) {
         <View style={{ width: 24 }} />
       </View>
 
-      {/* ===== 날짜 표시 ===== */}
       <Text style={styles.dateText}>{dateText}</Text>
 
-      {/* ===== 합계 ===== */}
       <View style={styles.summaryBox}>
         <Text style={styles.balanceText}>{balance.toLocaleString()}원</Text>
         <Text style={styles.subText}>
@@ -60,12 +98,9 @@ export default function HistoryDetail({ route, navigation }) {
         </Text>
       </View>
 
-      {/* ===== 내역 리스트 ===== */}
       <ScrollView contentContainerStyle={styles.listContainer}>
         <View style={styles.listHeader}>
           <Text style={styles.listTitle}>전체</Text>
-
-          {/* ➕ 버튼 */}
           <Pressable onPress={() => setShowAddModal(true)}>
             <Ionicons name="add-circle-outline" size={28} color="#000" />
           </Pressable>
@@ -90,7 +125,7 @@ export default function HistoryDetail({ route, navigation }) {
         ))}
       </ScrollView>
 
-      {/* ===== 바텀시트 모달 ===== */}
+      {/* ✅ 모달 */}
       <Modal
         visible={showAddModal}
         animationType="slide"
@@ -99,7 +134,6 @@ export default function HistoryDetail({ route, navigation }) {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            {/* 닫기 화살표 */}
             <Pressable
               style={{ alignSelf: 'center', paddingVertical: 4 }}
               onPress={() => setShowAddModal(false)}
@@ -108,9 +142,13 @@ export default function HistoryDetail({ route, navigation }) {
             </Pressable>
 
             <Text style={styles.modalTitle}>이용내역 추가하기</Text>
-            <Text style={styles.modalDate}>{dayjs().format('YYYY.MM.DD')}</Text>
+            <Text style={styles.modalDate}>
+              {selectedDate
+                ? dayjs(selectedDate).format('YYYY.MM.DD')
+                : dayjs().format('YYYY.MM.DD')}
+            </Text>
 
-            {/* 상단 타입 선택 */}
+            {/* 수입/지출 선택 */}
             <View style={styles.rowGroup}>
               {['수입', '지출'].map((t) => (
                 <Pressable
@@ -133,29 +171,6 @@ export default function HistoryDetail({ route, navigation }) {
               ))}
             </View>
 
-            {/* 하위 타입 선택 */}
-            <View style={styles.rowGroup}>
-              {['이체', '저축'].map((t) => (
-                <Pressable
-                  key={t}
-                  onPress={() => setSubType(t)}
-                  style={[
-                    styles.typeButton,
-                    subType === t && styles.typeActive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.typeText,
-                      subType === t && styles.typeTextActive,
-                    ]}
-                  >
-                    {t}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-
             {/* 금액 입력 */}
             <Text style={styles.label}>금액</Text>
             <TextInput
@@ -166,15 +181,32 @@ export default function HistoryDetail({ route, navigation }) {
               style={styles.input}
             />
 
-            {/* 결제방식 (지출일 때만 표시) */}
+            {/* 결제방식 */}
             {mainType === '지출' && (
               <>
                 <View style={styles.divider} />
                 <Text style={styles.label}>결제방식</Text>
                 <View style={styles.optionRow}>
-                  {['현금', '카드', '상품권'].map((opt) => (
-                    <Pressable key={opt} style={styles.optionTag}>
-                      <Text>{opt}</Text>
+                  {Object.keys(paymentMap).map((opt) => (
+                    <Pressable
+                      key={opt}
+                      onPress={() => setPaymentType(paymentMap[opt])}
+                      style={[
+                        styles.optionTag,
+                        paymentType === paymentMap[opt] && {
+                          backgroundColor: '#000',
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={{
+                          color:
+                            paymentType === paymentMap[opt] ? '#fff' : '#000',
+                          fontWeight: '600',
+                        }}
+                      >
+                        {opt}
+                      </Text>
                     </Pressable>
                   ))}
                 </View>
@@ -186,29 +218,30 @@ export default function HistoryDetail({ route, navigation }) {
             <Text style={styles.label}>
               카테고리({mainType === '지출' ? '지출' : '수입'})
             </Text>
+
             <View style={styles.optionWrap}>
-              {(mainType === '지출'
-                ? [
-                    '비상금',
-                    '주거',
-                    '용돈',
-                    '보험',
-                    '통신비',
-                    '식비',
-                    '생활용품',
-                    '패션',
-                    '건강',
-                    '자기계발',
-                    '자동차',
-                    '여행',
-                    '문화생활',
-                    '경조사',
-                    '기타',
-                  ]
-                : ['월급', '상여', '부수입', '투자소득', '기타']
-              ).map((c) => (
-                <Pressable key={c} style={styles.optionTag}>
-                  <Text>{c}</Text>
+              {Object.keys(
+                mainType === '지출' ? expenseCategories : incomeCategories
+              ).map((name) => (
+                <Pressable
+                  key={name}
+                  onPress={() => {
+                    setSelectedCategory(name);
+                    setDescription(name); // ✅ 카테고리 클릭 시 description 자동 설정
+                  }}
+                  style={[
+                    styles.optionTag,
+                    selectedCategory === name && { backgroundColor: '#000' },
+                  ]}
+                >
+                  <Text
+                    style={{
+                      color: selectedCategory === name ? '#fff' : '#000',
+                      fontWeight: '600',
+                    }}
+                  >
+                    {name}
+                  </Text>
                 </Pressable>
               ))}
             </View>
@@ -217,7 +250,52 @@ export default function HistoryDetail({ route, navigation }) {
             <View style={styles.divider} />
             <Pressable
               style={styles.submitButton}
-              onPress={() => setShowAddModal(false)}
+              onPress={async () => {
+                try {
+                  if (!amount || isNaN(amount)) {
+                    alert('금액을 숫자로 입력하세요.');
+                    return;
+                  }
+                  if (mainType === '지출' && !paymentType) {
+                    alert('결제 방식을 선택하세요.');
+                    return;
+                  }
+                  if (!selectedCategory) {
+                    alert('카테고리를 선택하세요.');
+                    return;
+                  }
+
+                  const payload = {
+                    date: selectedDate || dayjs().format('YYYY-MM-DD'),
+                    description: description.trim() || '기타',
+                    amount: Number(amount),
+                    transactionType: mainType === '지출' ? 'EXPENSE' : 'INCOME',
+                    paymentType:
+                      mainType === '지출' ? paymentType : 'BANK_TRANSFER',
+                    categoryId:
+                      mainType === '지출'
+                        ? expenseCategories[selectedCategory]
+                        : incomeCategories[selectedCategory],
+                  };
+
+                  console.log('📤 요청 데이터:', payload);
+                  const res = await AuthService.createExpense(payload);
+
+                  if (res.success) {
+                    alert('✅ 내역이 등록되었습니다!');
+                    setShowAddModal(false);
+                    setAmount('');
+                    setDescription('');
+                    setPaymentType(null);
+                    setSelectedCategory(null);
+                  } else {
+                    alert('❌ 등록 실패: ' + res.message);
+                  }
+                } catch (err) {
+                  console.error('등록 에러:', err);
+                  alert('서버와의 통신 중 오류가 발생했습니다.');
+                }
+              }}
             >
               <Text style={styles.submitText}>작성 완료</Text>
             </Pressable>
@@ -225,7 +303,7 @@ export default function HistoryDetail({ route, navigation }) {
         </View>
       </Modal>
 
-      {/* ===== 하단 탭 ===== */}
+      {/* 하단 탭 */}
       <View style={styles.bottomTab}>
         <Pressable style={styles.tabItem} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#000" />
@@ -287,8 +365,6 @@ const styles = StyleSheet.create({
   itemTitle: { fontWeight: '600' },
   itemTime: { fontSize: 12, color: '#777' },
   itemAmount: { fontWeight: '700' },
-
-  /** === 모달 === */
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -355,7 +431,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   submitText: { textAlign: 'center', color: '#fff', fontWeight: '700' },
-
   bottomTab: {
     flexDirection: 'row',
     justifyContent: 'space-around',
