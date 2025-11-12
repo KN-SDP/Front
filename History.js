@@ -182,9 +182,9 @@ export default function History({ navigation }) {
                 <Text style={styles.monthLabel}>{m.label}</Text>
                 {i === 0 ? (
                   <>
-                    <Text style={styles.totalText}>+300,000</Text>
-                    <Text style={styles.incomeText}>+500,000</Text>
-                    <Text style={styles.expenseText}>-200,200</Text>
+                    <Text style={styles.totalText}>0</Text>
+                    <Text style={styles.incomeText}>0</Text>
+                    <Text style={styles.expenseText}>0</Text>
                   </>
                 ) : (
                   <View style={{ height: 40 }} />
