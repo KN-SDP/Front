@@ -10,14 +10,10 @@ if (process.env.EXPO_PUBLIC_API_URL) {
   BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 } else if (Platform.OS === 'web') {
   // ✅ 웹 환경
-  const origin = window?.location?.origin || '';
-  if (origin.includes('localhost')) {
-    // 로컬 테스트
-    BASE_URL = 'http://localhost:8081';
-  } else {
-    // CloudType 등 배포 환경
-    BASE_URL = 'https://knusdpsl.mooo.com';
-  }
+  const origin = window?.location?.origin || 'https://knusdpsl.mooo.com';
+  BASE_URL = origin.includes('localhost')
+    ? 'https://knusdpsl.mooo.com' // 로컬 웹도 실제 서버로 접근
+    : origin;
 } else {
   // ✅ iOS / Android 환경
   BASE_URL = 'https://knusdpsl.mooo.com';
