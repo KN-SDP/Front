@@ -2,6 +2,7 @@
   "name": "Front",
   "license": "0BSD",
   "version": "1.0.0",
+  "type": "module",
   "proxy": "https://knusdpsl.mooo.com",
   "main": "index.js",
   "scripts": {
