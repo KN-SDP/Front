@@ -68,24 +68,41 @@ export default function HistoryDetail({ route, navigation }) {
   const fetchTransactions = async () => {
     try {
       setLoading(true);
-      const dateParam = selectedDate || dayjs().format('YYYY-MM-DD');
-      const res = await AuthService.getLedgerList(dateParam);
 
-      if (res && Array.isArray(res.data)) {
-        console.log('🧩 서버 응답 구조:', res.data);
+      // 🔥 일별 조회일 때 날짜 정확히 매칭시키기
+      if (selectedDate) {
+        const res = await AuthService.getLedgerList(selectedDate);
 
-        setTransactions(res.data);
-      } else {
-        console.warn('⚠️ 응답 형식이 배열이 아님:', res);
-        setTransactions([]);
+        const filtered = (res.data || []).filter(
+          (t) => t.date === selectedDate
+        );
+
+        console.log('📌 일별 필터링 후:', filtered);
+
+        setTransactions(filtered);
+        return;
       }
+
+      // 🟧 2) 월 기반 조회 (월별)
+      if (selectedMonth && selectedYear) {
+        const res = await AuthService.getLedgerByMonth(
+          selectedYear,
+          selectedMonth
+        );
+        setTransactions(res.data || []);
+        return;
+      }
+
+      // 🟥 3) fallback (should never happen)
+      setTransactions([]);
     } catch (err) {
-      console.error('거래내역 불러오기 실패:', err);
+      console.error('❌ 거래내역 불러오기 오류:', err);
       setTransactions([]);
     } finally {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     fetchTransactions();
   }, [selectedDate]);

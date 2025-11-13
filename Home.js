@@ -26,6 +26,9 @@ export default function Home({ navigation }) {
   // ✅ 목표 목록 상태 추가
   const [goals, setGoals] = useState([]);
   const [goalLoading, setGoalLoading] = useState(true);
+  const [monthIncome, setMonthIncome] = useState(0);
+  const [monthExpense, setMonthExpense] = useState(0);
+  const [monthTotal, setMonthTotal] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -35,6 +38,7 @@ export default function Home({ navigation }) {
         if (!mounted) return;
         setUser(u);
         await loadGoals();
+        await loadMonthTotal();
       } finally {
         if (mounted) {
           setLoading(false);
@@ -46,6 +50,14 @@ export default function Home({ navigation }) {
       mounted = false;
     };
   }, []);
+  useEffect(() => {
+    const unsub = navigation.addListener('focus', async () => {
+      await loadGoals(); // 목표도 새로고침
+      await loadMonthTotal(); // 🔥 월별 합계도 새로고침
+    });
+
+    return unsub;
+  }, []);
 
   // ✅ 목표 불러오기 함수
   const loadGoals = async () => {
@@ -54,6 +66,19 @@ export default function Home({ navigation }) {
       if (res.success) setGoals(res.data);
     } catch (err) {
       console.error('목표 불러오기 실패:', err);
+    }
+  };
+  const loadMonthTotal = async () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+
+    const res = await AuthService.getMonthTotal(year, month);
+
+    if (res.success) {
+      setMonthIncome(res.income);
+      setMonthExpense(res.expense);
+      setMonthTotal(res.total);
     }
   };
 
@@ -225,7 +250,9 @@ export default function Home({ navigation }) {
             }}
           >
             <Text style={{ fontSize: 16, fontWeight: '700' }}>자산 / 내역</Text>
-            <Text style={{ fontSize: 16, fontWeight: '700' }}>{'>'}</Text>
+            <Pressable onPress={() => navigation.navigate('History')}>
+              <Text style={{ fontSize: 16, fontWeight: '700' }}>{'>'}</Text>
+            </Pressable>
           </View>
           <View
             style={{
@@ -251,10 +278,11 @@ export default function Home({ navigation }) {
                   textAlign: 'center',
                 }}
               >
-                0
+                {monthIncome.toLocaleString()}
               </Text>
               <Text style={{ textAlign: 'center' }}>수입</Text>
             </View>
+
             <View
               style={{
                 flex: 1,
@@ -266,12 +294,15 @@ export default function Home({ navigation }) {
               <Text
                 style={{ color: 'red', fontWeight: '700', textAlign: 'center' }}
               >
-                0
+                {monthExpense.toLocaleString()}
               </Text>
               <Text style={{ textAlign: 'center' }}>지출</Text>
             </View>
+
             <View style={{ flex: 1, padding: 12 }}>
-              <Text style={{ fontWeight: '700', textAlign: 'center' }}>0</Text>
+              <Text style={{ fontWeight: '700', textAlign: 'center' }}>
+                {monthTotal.toLocaleString()}
+              </Text>
               <Text style={{ textAlign: 'center' }}>합계</Text>
             </View>
           </View>

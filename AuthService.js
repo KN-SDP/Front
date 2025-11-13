@@ -443,6 +443,88 @@ const AuthService = {
       };
     }
   },
+  // AuthService.js 맨 아래 export 직전에 추가
+
+  // ✅ 월별 조회
+  async getLedgerByMonth(year, month) {
+    try {
+      const token = await AsyncStorage.getItem(TOKEN_KEY);
+      if (!token) {
+        return {
+          success: false,
+          statusCode: 401,
+          errorCode: 'UNAUTHORIZED',
+          message: '로그인이 필요합니다.',
+          data: [],
+        };
+      }
+
+      const res = await api.get('/ledger', {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { year, month },
+      });
+
+      // 서버가 배열 형태로 내려주는 경우 처리
+      const data = Array.isArray(res.data) ? res.data : res.data.items || [];
+
+      return {
+        success: true,
+        statusCode: 200,
+        data,
+      };
+    } catch (err) {
+      const data = err.response?.data || {};
+      console.error('❌ 월별 조회 실패:', data);
+
+      return {
+        success: false,
+        statusCode: data.status_code || err.response?.status || 500,
+        errorCode: data.error_code || 'UNKNOWN',
+        message: data.message || '월별 조회 중 오류가 발생했습니다.',
+        data: [],
+      };
+    }
+  },
+
+  // 🟧 연도 전체 조회 (1~12월 반복 호출)
+  async getLedgerByYear(year) {
+    const result = [];
+
+    for (let month = 1; month <= 12; month++) {
+      const res = await this.getLedgerByMonth(year, month);
+
+      if (res.success && Array.isArray(res.data)) {
+        result.push(...res.data);
+      } else {
+        console.warn(`⚠️ ${month}월 조회 실패:`, res.message);
+      }
+    }
+
+    return result;
+  },
+  // 이번 달 전체 합계 불러오기
+  async getMonthTotal(year, month) {
+    try {
+      const res = await this.getLedgerByMonth(year, month);
+
+      if (res.success && Array.isArray(res.data)) {
+        let income = 0;
+        let expense = 0;
+
+        res.data.forEach((t) => {
+          if (t.type === 'INCOME') income += t.amount;
+          if (t.type === 'EXPENSE') expense += t.amount;
+        });
+
+        return { success: true, income, expense, total: income - expense };
+      }
+
+      return { success: false, income: 0, expense: 0, total: 0 };
+    } catch (err) {
+      console.log('getMonthTotal error:', err);
+      return { success: false, income: 0, expense: 0, total: 0 };
+    }
+  },
 };
 
 export default AuthService;

@@ -38,6 +38,10 @@ export default function Motivation({ navigation }) {
   const [goals, setGoals] = useState([]);
   const [viewMode, setViewMode] = useState('card'); // card | list
 
+  // 🔥 정렬 추가
+  const [sortType, setSortType] = useState('latest'); // latest | progress
+  const [sortOrder, setSortOrder] = useState('desc'); // desc | asc
+
   const loadGoals = async () => {
     const res = await AuthService.getGoals();
 
@@ -66,6 +70,21 @@ export default function Motivation({ navigation }) {
     });
   };
 
+  // 🔥 정렬 로직 (토글 포함)
+  const sortedGoals = [...goals].sort((a, b) => {
+    if (sortType === 'latest') {
+      return sortOrder === 'desc' ? b.goalId - a.goalId : a.goalId - b.goalId;
+    }
+
+    if (sortType === 'progress') {
+      return sortOrder === 'desc'
+        ? b.progressRate - a.progressRate
+        : a.progressRate - b.progressRate;
+    }
+    return 0;
+  });
+
+  // 카드 렌더링
   const renderCard = ({ item }) => (
     <View style={styles.card}>
       <View style={styles.cardRow}>
@@ -76,7 +95,6 @@ export default function Motivation({ navigation }) {
         <View style={{ flex: 1, paddingLeft: 10 }}>
           <Text style={styles.goalTitle}>{item.title}</Text>
 
-          {/* Progress bar */}
           <View style={styles.progressTrack}>
             <View
               style={[
@@ -94,7 +112,7 @@ export default function Motivation({ navigation }) {
             달성률: {Math.round(item.progressRate * 100)}%
           </Text>
         </View>
-        {/* ✅ 삭제 버튼 추가 */}
+
         <Pressable
           onPress={() => handleDelete(item.goalId)}
           style={styles.deleteBtn}
@@ -105,11 +123,19 @@ export default function Motivation({ navigation }) {
     </View>
   );
 
+  // 한줄 리스트 렌더링
   const renderRow = ({ item }) => (
     <View style={styles.rowItem}>
       <Text style={{ flex: 2 }}>{item.title}</Text>
       <Text style={{ flex: 2 }}>{item.targetAmount.toLocaleString()}원</Text>
       <Text style={{ flex: 1 }}>{Math.round(item.progressRate * 100)}%</Text>
+
+      <Pressable
+        onPress={() => handleDelete(item.goalId)}
+        style={styles.rowDeleteBtn}
+      >
+        <Ionicons name="trash-outline" size={20} color="red" />
+      </Pressable>
     </View>
   );
 
@@ -123,8 +149,10 @@ export default function Motivation({ navigation }) {
         <Text style={styles.title}>Smart Ledger</Text>
         <View style={{ width: 24 }} />
       </View>
+
       {/* Filter Bar */}
       <View style={styles.filterBar}>
+        {/* 카드형 */}
         <Pressable style={styles.filterBtn} onPress={() => setViewMode('card')}>
           <Ionicons
             name={viewMode === 'card' ? 'list' : 'list-outline'}
@@ -132,6 +160,8 @@ export default function Motivation({ navigation }) {
           />
           <Text>카드</Text>
         </Pressable>
+
+        {/* 리스트형 */}
         <Pressable style={styles.filterBtn} onPress={() => setViewMode('list')}>
           <Ionicons
             name={
@@ -142,17 +172,51 @@ export default function Motivation({ navigation }) {
           <Text>한줄</Text>
         </Pressable>
 
-        <Pressable style={styles.filterBtn}>
-          <Text>최신순</Text>
-          <Ionicons name="chevron-down" size={16} />
+        {/* 최신순 정렬 (토글 포함) */}
+        <Pressable
+          style={styles.filterBtn}
+          onPress={() => {
+            if (sortType === 'latest') {
+              setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+            } else {
+              setSortType('latest');
+              setSortOrder('desc');
+            }
+          }}
+        >
+          <Text style={{ fontWeight: sortType === 'latest' ? '700' : '400' }}>
+            최신순
+          </Text>
+          <Ionicons
+            name={sortOrder === 'desc' ? 'chevron-down' : 'chevron-up'}
+            size={16}
+          />
         </Pressable>
-        <Pressable style={styles.filterBtn}>
-          <Text>진행도순</Text>
-          <Ionicons name="chevron-down" size={16} />
+
+        {/* 진행도순 정렬 (토글 포함) */}
+        <Pressable
+          style={styles.filterBtn}
+          onPress={() => {
+            if (sortType === 'progress') {
+              setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+            } else {
+              setSortType('progress');
+              setSortOrder('desc');
+            }
+          }}
+        >
+          <Text style={{ fontWeight: sortType === 'progress' ? '700' : '400' }}>
+            진행도순
+          </Text>
+          <Ionicons
+            name={sortOrder === 'desc' ? 'chevron-down' : 'chevron-up'}
+            size={16}
+          />
         </Pressable>
       </View>
+
       {/* 리스트 */}
-      {goals.length === 0 ? (
+      {sortedGoals.length === 0 ? (
         <View style={styles.emptyBox}>
           <Text style={styles.emptyText}>
             마음에 꼭 드는 목표를 정하는 순간,{'\n'}저축은 더 즐거워져요.
@@ -166,7 +230,7 @@ export default function Motivation({ navigation }) {
         </View>
       ) : viewMode === 'card' ? (
         <FlatList
-          data={goals}
+          data={sortedGoals}
           renderItem={renderCard}
           keyExtractor={(item) => item.goalId.toString()}
           contentContainerStyle={{ paddingBottom: 100 }}
@@ -185,31 +249,20 @@ export default function Motivation({ navigation }) {
             <Text style={{ flex: 2, fontWeight: '600' }}>이름</Text>
             <Text style={{ flex: 2, fontWeight: '600' }}>가격</Text>
             <Text style={{ flex: 1, fontWeight: '600' }}>달성률</Text>
+            <View style={{ width: 40 }} />
           </View>
+
           <FlatList
-            data={goals}
+            data={sortedGoals}
             renderItem={renderRow}
             keyExtractor={(i) => i.goalId.toString()}
             contentContainerStyle={{ paddingBottom: 100 }}
           />
         </>
       )}
+
       {/* 하단 탭바 */}
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-around',
-          alignItems: 'center',
-          height: 60,
-          borderTopWidth: 1,
-          borderTopColor: '#000',
-          backgroundColor: '#fff',
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-        }}
-      >
+      <View style={styles.tabBar}>
         <Pressable
           onPress={() => navigation.navigate('Home')}
           style={{ alignItems: 'center' }}
@@ -305,6 +358,12 @@ const styles = StyleSheet.create({
     padding: 12,
     borderBottomWidth: 1,
     borderColor: '#eee',
+    alignItems: 'center',
+  },
+  rowDeleteBtn: {
+    width: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   emptyBox: { flex: 1, justifyContent: 'center', alignItems: 'center' },
@@ -331,5 +390,19 @@ const styles = StyleSheet.create({
     padding: 8,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+
+  tabBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    height: 60,
+    borderTopWidth: 1,
+    borderTopColor: '#000',
+    backgroundColor: '#fff',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
 });
