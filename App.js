@@ -4,7 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Text, TextInput } from 'react-native';
 
+// ====== 페이지들 ======
 import Login from './Login';
 import SignUp from './SignUp';
 import FindId from './FindId';
@@ -21,30 +23,41 @@ const Stack = createNativeStackNavigator();
 
 export default function App() {
   const [initialRoute, setInitialRoute] = useState('loading');
+  const [fontsReady, setFontsReady] = useState(false);
 
+  // ------ 1) 자동 로그인 체크 ------
   useEffect(() => {
     const checkLogin = async () => {
       const token = await AsyncStorage.getItem('accessToken');
       setInitialRoute(token ? 'Home' : 'Login');
     };
-
     checkLogin();
   }, []);
 
+  // ------ 2) Pretendard + Ionicons 폰트 로딩 ------
   useEffect(() => {
     async function loadFonts() {
-      await Font.loadAsync(Ionicons.font);
+      await Font.loadAsync({
+        ...Ionicons.font,
+        Pretendard: require('./assets/fonts/Pretendard-Regular.ttf'),
+        PretendardBold: require('./assets/fonts/Pretendard-Bold.ttf'),
+        PretendardMedium: require('./assets/fonts/Pretendard-Medium.ttf'),
+        PretendardSemiBold: require('./assets/fonts/Pretendard-SemiBold.ttf'),
+      });
+
+      setFontsReady(true);
     }
+
     loadFonts();
   }, []);
 
-  // 로딩 동안 null 렌더
-  if (initialRoute === 'loading') return null;
+  // ------ 3) 폰트 또는 초기 라우트 준비 안되면 렌더 X ------
+  if (initialRoute === 'loading' || !fontsReady) return null;
 
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName={initialRoute} // 토큰 기반으로 결정
+        initialRouteName={initialRoute}
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="Login" component={Login} />

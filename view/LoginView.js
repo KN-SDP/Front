@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import styles, { GRADIENT_COLORS } from '../style/LoginStyles';
-
+import { Ionicons } from '@expo/vector-icons';
 const CONTENT_MAX_WIDTH = 360;
 const PH = '#999';
 
@@ -77,7 +77,11 @@ export default function LoginView({
                 onPress={() => setSecure((s) => !s)}
                 style={styles.eyeBtn}
               >
-                <Text style={styles.eyeIcon}>{secure ? '👁️‍🗨️' : '🙈'}</Text>
+                <Ionicons
+                  name={secure ? 'eye-off' : 'eye'}
+                  size={22}
+                  color="#FFFFFF"
+                />
               </Pressable>
             </View>
 

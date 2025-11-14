@@ -1,4 +1,4 @@
-// SignUp.js
+// SignUp.js (컬러 테마 적용 버전)
 import React, { useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -12,12 +12,12 @@ import {
   ScrollView,
 } from 'react-native';
 import AuthService from './AuthService';
+import { Ionicons } from '@expo/vector-icons';
 
-// ✅ 플랫폼별 Alert 유틸
+// 플랫폼별 Alert 유틸
 function showAlert(title, message, buttons) {
   if (Platform.OS === 'web') {
     window.alert(`${title ? `${title}\n` : ''}${message}`);
-    // 버튼 중 확인(onPress) 실행
     if (buttons && buttons[0]?.onPress) buttons[0].onPress();
   } else {
     Alert.alert(title, message, buttons);
@@ -25,20 +25,25 @@ function showAlert(title, message, buttons) {
 }
 
 const CONTENT_MAX_WIDTH = 360;
-const PH = '#999';
 
-// ---------- 표시용 포맷터 ----------
+// PLACEHOLDER COLOR
+const PH = '#BFBFBF';
+
+// 표시 포맷터 ─────────────────────────────────────────
 function formatBirth(digits = '') {
   const v = (digits || '').replace(/[^0-9]/g, '').slice(0, 8);
   const y = v.slice(0, 4);
   const m = v.slice(4, 6);
   const d = v.slice(6, 8);
+
   if (v.length <= 4) return y;
   if (v.length <= 6) return `${y}-${m}`;
   return `${y}-${m}-${d}`;
 }
+
 function formatPhone(digits = '') {
   const v = (digits || '').replace(/[^0-9]/g, '').slice(0, 11);
+
   if (v.startsWith('02')) {
     if (v.length <= 2) return v;
     if (v.length <= 5) return `${v.slice(0, 2)}-${v.slice(2)}`;
@@ -46,36 +51,42 @@ function formatPhone(digits = '') {
       return `${v.slice(0, 2)}-${v.slice(2, v.length - 4)}-${v.slice(-4)}`;
     return `${v.slice(0, 2)}-${v.slice(2, 6)}-${v.slice(6, 10)}`;
   }
+
   if (v.length <= 3) return v;
   if (v.length <= 7) return `${v.slice(0, 3)}-${v.slice(3)}`;
+
   return `${v.slice(0, 3)}-${v.slice(3, v.length - 4)}-${v.slice(-4)}`;
 }
-// ---------- 전송용 정규화 ----------
+
+// 서버 전송용 변환 ─────────────────────────────────────────
 function toISODate(input = '') {
   const raw = (input || '').replace(/[^0-9]/g, '');
+
   if (raw.length === 8)
     return `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`;
+
   if (/^\d{4}-\d{2}-\d{2}$/.test(input)) return input;
+
   return input;
 }
+
 function toOnlyDigitsPhone(input = '') {
   return (input || '').replace(/[^0-9]/g, '').slice(0, 11);
 }
 
+// COMPONENT ─────────────────────────────────────────
 export default function SignUp({ navigation }) {
-  // 입력 상태
   const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
   const [pw2, setPw2] = useState('');
-  const [pwSecure, setPwSecure] = useState(true); // ✅ 비밀번호 가시성
-  const [pw2Secure, setPw2Secure] = useState(true); // ✅ 비밀번호 확인 가시성
+  const [pwSecure, setPwSecure] = useState(true);
+  const [pw2Secure, setPw2Secure] = useState(true);
 
   const [name, setName] = useState('');
   const [nickname, setNickname] = useState('');
   const [telDigits, setTelDigits] = useState('');
   const [birthDigits, setBirthDigits] = useState('');
 
-  // 약관
   const [agreeAll, setAgreeAll] = useState(false);
   const [agree1, setAgree1] = useState(false);
   const [agree2, setAgree2] = useState(false);
@@ -85,6 +96,7 @@ export default function SignUp({ navigation }) {
   const [err, setErr] = useState('');
 
   const syncAllFromItems = (a1, a2, a3) => setAgreeAll(a1 && a2 && a3);
+
   const onToggleAll = () => {
     const n = !agreeAll;
     setAgreeAll(n);
@@ -92,23 +104,26 @@ export default function SignUp({ navigation }) {
     setAgree2(n);
     setAgree3(n);
   };
+
   const onToggleA1 = () => {
     const n = !agree1;
     setAgree1(n);
     syncAllFromItems(n, agree2, agree3);
   };
+
   const onToggleA2 = () => {
     const n = !agree2;
     setAgree2(n);
     syncAllFromItems(agree1, n, agree3);
   };
+
   const onToggleA3 = () => {
     const n = !agree3;
     setAgree3(n);
     syncAllFromItems(agree1, agree2, n);
   };
 
-  // 명세 제약에 맞춘 클라이언트 선 검증
+  // 제출 가능 여부
   const canSubmit =
     email.trim() &&
     pw.length >= 8 &&
@@ -128,8 +143,10 @@ export default function SignUp({ navigation }) {
       showAlert('알림', '입력값을 확인해 주세요.');
       return;
     }
-    setErr('');
+
     setSubmitting(true);
+    setErr('');
+
     try {
       const payload = {
         userEmail: email.trim(),
@@ -140,9 +157,14 @@ export default function SignUp({ navigation }) {
         userBirth: toISODate(birthDigits),
         userPhoneNumber: toOnlyDigitsPhone(telDigits),
       };
+
       await AuthService.signUp(payload);
-      showAlert('회원가입 완료', '가입이 완료되었습니다. 로그인해 주세요.', [
-        { text: '확인', onPress: () => navigation.replace('Login') },
+
+      showAlert('회원가입 완료', '가입이 완료되었습니다.', [
+        {
+          text: '완료',
+          onPress: () => navigation.replace('Login'),
+        },
       ]);
     } catch (e) {
       const status = e?.response?.status;
@@ -155,15 +177,11 @@ export default function SignUp({ navigation }) {
         showAlert('중복 닉네임', '이미 사용중인 닉네임입니다.');
       } else if (status === 400 && code === 'ValidationError') {
         showAlert('유효성 오류', message || '입력 형식이 올바르지 않습니다.');
-      } else if (status === 500) {
-        showAlert('서버 오류', '서버에 문제가 발생했습니다.');
       } else {
-        showAlert(
-          '오류',
-          message || '회원가입에 실패했습니다. 다시 시도해 주세요.'
-        );
+        showAlert('오류', message || '회원가입에 실패했습니다.');
       }
-      setErr(message || '회원가입에 실패했습니다.');
+
+      setErr(message || '회원가입 실패');
     } finally {
       setSubmitting(false);
     }
@@ -172,120 +190,108 @@ export default function SignUp({ navigation }) {
   return (
     <KeyboardAvoidingView
       behavior={Platform.select({ ios: 'padding', android: undefined })}
-      style={{ flex: 1, backgroundColor: '#fff' }}
+      style={{ flex: 1, backgroundColor: '#0E2B25' }}
     >
+      <View style={styles.header}>
+        <Pressable
+          style={styles.backBtn}
+          onPress={() => navigation.replace('Login')}
+        >
+          <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
+        </Pressable>
+
+        <Text style={styles.headerTitle}>회원가입</Text>
+      </View>
+
       <ScrollView
         contentContainerStyle={{
           alignItems: 'center',
           paddingVertical: 24,
           paddingHorizontal: 16,
         }}
-        keyboardShouldPersistTaps="handled"
       >
         <View style={{ width: '100%', maxWidth: CONTENT_MAX_WIDTH }}>
-          <Text style={{ fontSize: 22, fontWeight: '800', marginBottom: 16 }}>
-            회원가입
+          <Text style={styles.welcome}>
+            반가워요 회원님{'\n'}
+            다음 정보를 입력해 주세요
           </Text>
 
           {/* 이메일 */}
-          <Text style={styles.label}>이메일</Text>
+          <Text style={styles.label}>아이디</Text>
           <View style={styles.inputWrap}>
             <TextInput
-              placeholder="kangnam@naver.com"
+              placeholder="ex)kangnam@naver.com"
               placeholderTextColor={PH}
               value={email}
               onChangeText={setEmail}
               style={styles.input}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              returnKeyType="next"
+            />
+          </View>
+          <Text style={styles.label}>이름</Text>
+          <View style={styles.inputWrap}>
+            <TextInput
+              placeholder="이름을 입력해주세요"
+              placeholderTextColor={PH}
+              value={name}
+              onChangeText={setName}
+              style={styles.input}
             />
           </View>
 
           {/* 비밀번호 */}
-          <Text style={styles.label}>비밀번호 (8~20자)</Text>
-          <View style={styles.inputRow}>
+          <Text style={styles.label}>비밀번호</Text>
+          <View style={styles.inputWrap}>
             <TextInput
-              placeholder="비밀번호 입력"
+              placeholder="8~20자 사이"
               placeholderTextColor={PH}
               value={pw}
               onChangeText={setPw}
-              style={[styles.input, { paddingRight: 56 }]}
+              style={[styles.input, { flex: 1 }]}
               secureTextEntry={pwSecure}
-              returnKeyType="next"
             />
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => setPwSecure((s) => !s)}
-              style={styles.eyeBtn}
-            >
-              <Text style={styles.eyeText}>{pwSecure ? '보기' : '숨기기'}</Text>
+
+            <Pressable onPress={() => setPwSecure(!pwSecure)}>
+              <Ionicons
+                name={pwSecure ? 'eye-off' : 'eye'}
+                size={22}
+                color="#FFFFFF"
+              />
             </Pressable>
           </View>
 
           {/* 비밀번호 확인 */}
           <Text style={styles.label}>비밀번호 확인</Text>
-          <View style={styles.inputRow}>
+          <View style={styles.inputWrap}>
             <TextInput
-              placeholder="비밀번호 확인"
+              placeholder="8~20자 사이"
               placeholderTextColor={PH}
               value={pw2}
               onChangeText={setPw2}
-              style={[styles.input, { paddingRight: 56 }]}
+              style={[styles.input, { flex: 1 }]}
               secureTextEntry={pw2Secure}
-              returnKeyType="next"
             />
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => setPw2Secure((s) => !s)}
-              style={styles.eyeBtn}
-            >
-              <Text style={styles.eyeText}>
-                {pw2Secure ? '보기' : '숨기기'}
-              </Text>
+
+            <Pressable onPress={() => setPw2Secure(!pw2Secure)}>
+              <Ionicons
+                name={pw2Secure ? 'eye-off' : 'eye'}
+                size={22}
+                color="#FFFFFF"
+              />
             </Pressable>
           </View>
 
-          {/* 이름 */}
-          <Text style={styles.label}>이름 (2~20자)</Text>
-          <View style={styles.inputWrap}>
-            <TextInput
-              placeholder="이름을 입력하세요."
-              placeholderTextColor={PH}
-              value={name}
-              onChangeText={setName}
-              style={styles.input}
-              returnKeyType="next"
-            />
-          </View>
-
-          {/* 닉네임 */}
-          <Text style={styles.label}>닉네임 (2~20자)</Text>
-          <View style={styles.inputWrap}>
-            <TextInput
-              placeholder="닉네임을 입력하세요."
-              placeholderTextColor={PH}
-              value={nickname}
-              onChangeText={setNickname}
-              style={styles.input}
-              returnKeyType="next"
-            />
-          </View>
-
           {/* 전화번호 */}
-          <Text style={styles.label}>전화번호</Text>
+          <Text style={styles.label}>휴대전화 번호</Text>
           <View style={styles.inputWrap}>
             <TextInput
-              placeholder="예) 010-1234-5678"
+              placeholder="- 없이 숫자만 입력해 주세요"
               placeholderTextColor={PH}
               value={formatPhone(telDigits)}
-              onChangeText={(text) =>
-                setTelDigits(text.replace(/[^0-9]/g, '').slice(0, 11))
+              onChangeText={(t) =>
+                setTelDigits(t.replace(/[^0-9]/g, '').slice(0, 11))
               }
+              keyboardType="number-pad"
               style={styles.input}
-              keyboardType="phone-pad"
-              maxLength={13}
-              returnKeyType="next"
             />
           </View>
 
@@ -293,16 +299,26 @@ export default function SignUp({ navigation }) {
           <Text style={styles.label}>생년월일</Text>
           <View style={styles.inputWrap}>
             <TextInput
-              placeholder="예) 2002-01-01"
+              placeholder="‘19990101’처럼 입력해 주세요"
               placeholderTextColor={PH}
               value={formatBirth(birthDigits)}
-              onChangeText={(text) =>
-                setBirthDigits(text.replace(/[^0-9]/g, '').slice(0, 8))
+              onChangeText={(t) =>
+                setBirthDigits(t.replace(/[^0-9]/g, '').slice(0, 8))
               }
-              style={styles.input}
               keyboardType="number-pad"
-              maxLength={10}
-              returnKeyType="done"
+              style={styles.input}
+            />
+          </View>
+
+          {/* 닉네임 */}
+          <Text style={styles.label}>닉네임</Text>
+          <View style={styles.inputWrap}>
+            <TextInput
+              placeholder="회원님의 닉네임을 알려주세요"
+              placeholderTextColor={PH}
+              value={nickname}
+              onChangeText={setNickname}
+              style={styles.input}
             />
           </View>
 
@@ -310,28 +326,32 @@ export default function SignUp({ navigation }) {
           <View style={{ marginTop: 18 }}>
             <Pressable onPress={onToggleAll} style={styles.checkRow}>
               <View style={[styles.checkbox, agreeAll && styles.checkboxOn]} />
-              <Text style={[styles.checkText, { fontWeight: '700' }]}>
-                전체 동의
-              </Text>
+              <Text style={styles.checkText}>전체 동의</Text>
             </Pressable>
+
             <Pressable onPress={onToggleA1} style={styles.checkRow}>
               <View style={[styles.checkbox, agree1 && styles.checkboxOn]} />
-              <Text style={styles.checkText}>(필수) 이용약관 동의</Text>
-            </Pressable>
-            <Pressable onPress={onToggleA2} style={styles.checkRow}>
-              <View style={[styles.checkbox, agree2 && styles.checkboxOn]} />
               <Text style={styles.checkText}>
-                (필수) 개인정보 수집 및 이용 동의
+                만 14세 이상 가입 동의 (필수)
               </Text>
             </Pressable>
+
+            <Pressable onPress={onToggleA2} style={styles.checkRow}>
+              <View style={[styles.checkbox, agree2 && styles.checkboxOn]} />
+              <Text style={styles.checkText}>서비스 이용 동의 (필수)</Text>
+            </Pressable>
+
             <Pressable onPress={onToggleA3} style={styles.checkRow}>
               <View style={[styles.checkbox, agree3 && styles.checkboxOn]} />
-              <Text style={styles.checkText}>(선택) 마케팅 정보 수신 동의</Text>
+              <Text style={styles.checkText}>마케팅 정보 수신 동의 (선택)</Text>
             </Pressable>
           </View>
 
-          {!!err && <Text style={{ color: '#d00', marginTop: 10 }}>{err}</Text>}
+          {err ? (
+            <Text style={{ color: '#ff6b6b', marginTop: 8 }}>{err}</Text>
+          ) : null}
 
+          {/* 제출 버튼 */}
           <Pressable
             onPress={onSubmit}
             disabled={!canSubmit || submitting}
@@ -341,19 +361,10 @@ export default function SignUp({ navigation }) {
             ]}
           >
             {submitting ? (
-              <ActivityIndicator />
+              <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.submitText}>회원가입</Text>
+              <Text style={styles.submitText}>완료</Text>
             )}
-          </Pressable>
-
-          <Pressable
-            onPress={() => navigation.replace('Login')}
-            style={{ alignSelf: 'center', marginTop: 14 }}
-          >
-            <Text style={{ fontSize: 13, color: '#555' }}>
-              이미 계정이 있으신가요? 로그인
-            </Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -361,53 +372,101 @@ export default function SignUp({ navigation }) {
   );
 }
 
+// STYLE ─────────────────────────────────────────
 const styles = {
-  label: { fontSize: 13, fontWeight: '700', marginTop: 14, marginBottom: 6 },
+  header: {
+    width: '100%',
+    paddingTop: 40,
+    paddingBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0E2B25',
+  },
+
+  backBtn: {
+    padding: 6,
+    marginRight: 4,
+  },
+
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+
+  title: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 16,
+  },
+
+  welcome: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    marginBottom: 24,
+    lineHeight: 22,
+    fontWeight: '600',
+  },
+
+  label: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginTop: 16,
+    marginBottom: 6,
+  },
+
   inputWrap: {
-    borderWidth: 1,
-    borderColor: '#E5E5EA',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderColor: '#FFFFFF',
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  // 토글 버튼을 넣기 위한 행 컨테이너
-  inputRow: {
-    borderWidth: 1,
-    borderColor: '#E5E5EA',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    backgroundColor: '#fff',
-    position: 'relative',
-    minHeight: 48,
-    justifyContent: 'center',
+
+  input: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    paddingVertical: 4,
   },
-  input: { fontSize: 15, paddingVertical: 12, paddingLeft: 0, paddingRight: 0 },
-  eyeBtn: {
-    position: 'absolute',
-    right: 10,
-    top: 10,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
+
+  checkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
   },
-  eyeText: { fontSize: 13, color: '#555', fontWeight: '700' },
+
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: '#79A394',
+  },
+
+  checkboxOn: {
+    backgroundColor: '#79A394',
+    borderColor: '#79A394',
+  },
+
+  checkText: {
+    marginLeft: 10,
+    fontSize: 14,
+    color: '#FFFFFF',
+  },
+
   submitBtn: {
-    marginTop: 20,
-    backgroundColor: '#000',
+    marginTop: 30,
+    backgroundColor: '#2F5D50',
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
   },
-  submitText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  checkRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10 },
-  checkbox: {
-    width: 18,
-    height: 18,
-    borderRadius: 4,
-    borderWidth: 1.5,
-    borderColor: '#C7C7CC',
-    backgroundColor: '#fff',
+
+  submitText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
-  checkboxOn: { backgroundColor: '#000', borderColor: '#000' },
-  checkText: { marginLeft: 10, fontSize: 14 },
 };

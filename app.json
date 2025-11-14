@@ -23,11 +23,17 @@
       "edgeToEdgeEnabled": true
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "fonts": [
+        "./assets/fonts/Pretendard-Regular.ttf",
+        "./assets/fonts/Pretendard-Bold.ttf",
+        "./assets/fonts/Pretendard-Medium.ttf",
+        "./assets/fonts/Pretendard-SemiBold.ttf"
+      ]
     },
 
     "assetBundlePatterns": [
-      "**/*",
+      "assets/**/*",
       "node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/*"
     ]
   }
