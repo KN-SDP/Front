@@ -1,89 +1,154 @@
 // style/LoginStyles.js
 import { StyleSheet } from 'react-native';
 
+export const GRADIENT_COLORS = [
+  '#022326', // top
+  '#034040',
+  '#035951',
+  '#02735E', // bottom
+];
+
 export default StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: {
+    flex: 1,
+  },
+
+  /** 중앙 컨텐츠 */
   inner: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 22,
   },
+
+  /** SMART LEDGER 제목 */
   logoTop: {
-    fontSize: 40,
+    fontSize: 44,
     fontWeight: '800',
     textAlign: 'center',
-    color: '#000',
+    color: '#02735E',
   },
   logoBottom: {
-    fontSize: 40,
+    fontSize: 44,
     fontWeight: '800',
     textAlign: 'center',
-    color: '#000',
-    marginBottom: 30,
+    color: '#02735E',
+    marginBottom: 40,
   },
+
+  /** INPUT LABEL */
   label: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     marginBottom: 6,
-    color: '#000',
+    color: '#BFBFBF',
+    alignSelf: 'flex-start',
   },
+
+  /** INPUT BOX */
   inputWrap: {
+    width: '100%',
     borderBottomWidth: 1,
-    borderColor: '#aaa',
-    marginBottom: 16,
+    borderColor: '#BFBFBF',
+    marginBottom: 20,
   },
   inputRow: {
+    width: '100%',
     borderBottomWidth: 1,
-    borderColor: '#aaa',
-    marginBottom: 16,
+    borderColor: '#BFBFBF',
+    marginBottom: 20,
     position: 'relative',
     justifyContent: 'center',
   },
   input: {
-    fontSize: 15,
-    paddingVertical: 8,
-    color: '#000',
+    fontSize: 16,
+    paddingVertical: 10,
+    color: '#EDEDED',
   },
+
+  /** 비밀번호 보기 버튼 */
   eyeBtn: {
     position: 'absolute',
     right: 0,
-    bottom: 4,
+    bottom: 6,
     padding: 8,
   },
-  eyeIcon: { fontSize: 18, color: '#000' },
-  errorText: { color: '#d00', marginTop: 10 },
-  submitBtn: {
-    marginTop: 10,
-    backgroundColor: '#000',
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+  eyeIcon: {
+    fontSize: 20,
+    color: '#EDEDED',
   },
-  submitText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+
+  /** 에러 메시지 */
+  errorText: {
+    color: '#FF6B6B',
+    marginTop: 6,
+    fontSize: 13,
+  },
+
+  /** 로그인 버튼 */
+  submitBtn: {
+    marginTop: 20,
+    backgroundColor: '#02735E',
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    width: '100%',
+  },
+  submitText: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '700',
+  },
+
+  /** 회원가입 | ID 찾기 | PW 찾기 */
   linkRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 18,
   },
-  linkText: { fontSize: 13, color: '#000' },
+  linkText: {
+    fontSize: 14,
+    color: '#BFBFBF',
+  },
   divider: {
     width: 1,
-    height: 14,
-    backgroundColor: '#ccc',
+    height: 16,
+    backgroundColor: '#BFBFBF',
     marginHorizontal: 12,
   },
-  orText: { textAlign: 'center', marginVertical: 16, color: '#000' },
-  snsBtn: {
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginBottom: 10,
+
+  /** SNS */
+  orText: {
+    textAlign: 'center',
+    marginVertical: 20,
+    color: '#cccccc',
+    fontSize: 14,
   },
-  snsText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  footerRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 20 },
-  footerText: { fontSize: 12, color: '#000' },
-  footerDivider: { width: 12 },
+  snsBtn: {
+    borderRadius: 10,
+    paddingVertical: 13,
+    alignItems: 'center',
+    marginBottom: 12,
+    width: '100%',
+  },
+  snsText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+
+  /** FOOTER */
+  footerRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 25,
+  },
+  footerText: {
+    fontSize: 12,
+    color: '#cccccc',
+  },
+  footerDivider: {
+    width: 12,
+  },
 });
