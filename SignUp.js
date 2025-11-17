@@ -436,6 +436,10 @@ const styles = {
     flex: 1,
     fontSize: 16,
     paddingVertical: 4,
+    color: '#BFBFBF',
+    outlineStyle: 'none',
+    outlineWidth: 0,
+    outlineColor: 'transparent',
   },
 
   checkRow: {

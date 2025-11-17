@@ -63,6 +63,10 @@ export default StyleSheet.create({
   input: {
     fontSize: 16,
     paddingVertical: 10,
+    color: '#BFBFBF',
+    outlineStyle: 'none',
+    outlineWidth: 0,
+    outlineColor: 'transparent',
   },
 
   /** 에러 메시지 */
