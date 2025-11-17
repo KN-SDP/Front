@@ -7,17 +7,16 @@ import {
   ScrollView,
   ActivityIndicator,
   Animated,
-  Dimensions,
   TouchableWithoutFeedback,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import AuthService from './AuthService';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const SIDEBAR_WIDTH = SCREEN_WIDTH * 0.7;
-
 export default function Home({ navigation }) {
+  const { width: SCREEN_WIDTH } = useWindowDimensions();
+  const SIDEBAR_WIDTH = SCREEN_WIDTH * 0.7;
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -29,7 +28,6 @@ export default function Home({ navigation }) {
   const [monthIncome, setMonthIncome] = useState(0);
   const [monthExpense, setMonthExpense] = useState(0);
   const [monthTotal, setMonthTotal] = useState(0);
-
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -58,6 +56,10 @@ export default function Home({ navigation }) {
 
     return unsub;
   }, []);
+  useEffect(() => {
+    // 화면 크기 변동 시 사이드바 위치 재조정
+    sidebarAnim.setValue(sidebarVisible ? 0 : -SIDEBAR_WIDTH);
+  }, [SIDEBAR_WIDTH]);
 
   // ✅ 목표 불러오기 함수
   const loadGoals = async () => {
