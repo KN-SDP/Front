@@ -23,13 +23,14 @@ export default StyleSheet.create({
 
   /** SMART LEDGER 제목 */
   logoTop: {
-    fontSize: 44,
+    fontSize: 70,
     fontWeight: '800',
     textAlign: 'center',
     color: '#02735E',
+    paddingTop: 100,
   },
   logoBottom: {
-    fontSize: 44,
+    fontSize: 70,
     fontWeight: '800',
     textAlign: 'center',
     color: '#02735E',
@@ -57,25 +58,11 @@ export default StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: '#BFBFBF',
     marginBottom: 20,
-    position: 'relative',
-    justifyContent: 'center',
   },
+
   input: {
     fontSize: 16,
     paddingVertical: 10,
-    color: '#EDEDED',
-  },
-
-  /** 비밀번호 보기 버튼 */
-  eyeBtn: {
-    position: 'absolute',
-    right: 0,
-    bottom: 6,
-    padding: 8,
-  },
-  eyeIcon: {
-    fontSize: 20,
-    color: '#EDEDED',
   },
 
   /** 에러 메시지 */
@@ -106,6 +93,7 @@ export default StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 18,
+    marginBottom: 100,
   },
   linkText: {
     fontSize: 14,
@@ -119,12 +107,6 @@ export default StyleSheet.create({
   },
 
   /** SNS */
-  orText: {
-    textAlign: 'center',
-    marginVertical: 20,
-    color: '#cccccc',
-    fontSize: 14,
-  },
   snsBtn: {
     borderRadius: 10,
     paddingVertical: 13,
@@ -136,19 +118,5 @@ export default StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '700',
-  },
-
-  /** FOOTER */
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 25,
-  },
-  footerText: {
-    fontSize: 12,
-    color: '#cccccc',
-  },
-  footerDivider: {
-    width: 12,
   },
 });

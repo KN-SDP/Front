@@ -1,14 +1,5 @@
 import React, { useState } from 'react';
-import {
-  TextInput,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  View,
-  Text,
-  Alert,
-} from 'react-native';
+import { Platform, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import AuthService from './AuthService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -27,7 +18,7 @@ function showAlert(title, message, buttons) {
 }
 
 const CONTENT_MAX_WIDTH = 360;
-const PH = '#999';
+const PH = '#607072';
 
 export default function Login({ navigation }) {
   useFocusEffect(
@@ -39,7 +30,6 @@ export default function Login({ navigation }) {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [secure, setSecure] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -101,8 +91,6 @@ export default function Login({ navigation }) {
       setEmail={setEmail}
       password={password}
       setPassword={setPassword}
-      secure={secure}
-      setSecure={setSecure}
       submitting={submitting}
       error={error}
       canSubmit={canSubmit}

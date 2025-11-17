@@ -27,7 +27,7 @@ function showAlert(title, message, buttons) {
 const CONTENT_MAX_WIDTH = 360;
 
 // PLACEHOLDER COLOR
-const PH = '#BFBFBF';
+const PH = '#607072';
 
 // 표시 포맷터 ─────────────────────────────────────────
 function formatBirth(digits = '') {
@@ -190,14 +190,14 @@ export default function SignUp({ navigation }) {
   return (
     <KeyboardAvoidingView
       behavior={Platform.select({ ios: 'padding', android: undefined })}
-      style={{ flex: 1, backgroundColor: '#0E2B25' }}
+      style={{ flex: 1, backgroundColor: '#022326' }}
     >
       <View style={styles.header}>
         <Pressable
           style={styles.backBtn}
           onPress={() => navigation.replace('Login')}
         >
-          <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
+          <Ionicons name="chevron-back" size={28} color="#BFBFBF" />
         </Pressable>
 
         <Text style={styles.headerTitle}>회원가입</Text>
@@ -245,19 +245,21 @@ export default function SignUp({ navigation }) {
               placeholder="8~20자 사이"
               placeholderTextColor={PH}
               value={pw}
-              onChangeText={setPw}
+              onChangeText={(t) => {
+                setPw(t);
+              }}
               style={[styles.input, { flex: 1 }]}
-              secureTextEntry={pwSecure}
+              secureTextEntry={true}
             />
-
-            <Pressable onPress={() => setPwSecure(!pwSecure)}>
-              <Ionicons
-                name={pwSecure ? 'eye-off' : 'eye'}
-                size={22}
-                color="#FFFFFF"
-              />
-            </Pressable>
           </View>
+          {/* 비밀번호 길이 에러 메시지 */}
+          {pw.length > 0 && pw.length < 8 && (
+            <Text style={styles.pwErrorText}>8자리 이상이어야 합니다.</Text>
+          )}
+
+          {pw.length > 20 && (
+            <Text style={styles.pwErrorText}>20자리 이하여야 합니다.</Text>
+          )}
 
           {/* 비밀번호 확인 */}
           <Text style={styles.label}>비밀번호 확인</Text>
@@ -266,19 +268,25 @@ export default function SignUp({ navigation }) {
               placeholder="8~20자 사이"
               placeholderTextColor={PH}
               value={pw2}
-              onChangeText={setPw2}
+              onChangeText={(t) => {
+                setPw2(t);
+              }}
               style={[styles.input, { flex: 1 }]}
-              secureTextEntry={pw2Secure}
+              secureTextEntry={true}
             />
-
-            <Pressable onPress={() => setPw2Secure(!pw2Secure)}>
-              <Ionicons
-                name={pw2Secure ? 'eye-off' : 'eye'}
-                size={22}
-                color="#FFFFFF"
-              />
-            </Pressable>
+            {/* ❌ 아이콘 표시 */}
+            {pw2.length > 0 && pw !== pw2 && (
+              <Text style={styles.xIcon}>✕</Text>
+            )}
+            {pw2.length > 0 && pw === pw2 && (
+              <Text style={styles.okIcon}>✓</Text>
+            )}
           </View>
+          {pw2.length > 0 && pw !== pw2 && (
+            <Text style={styles.pwErrorText}>
+              비밀번호가 일치하지 않습니다.
+            </Text>
+          )}
 
           {/* 전화번호 */}
           <Text style={styles.label}>휴대전화 번호</Text>
@@ -380,7 +388,6 @@ const styles = {
     paddingBottom: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0E2B25',
   },
 
   backBtn: {
@@ -391,18 +398,18 @@ const styles = {
   headerTitle: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#BFBFBF',
   },
 
   title: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#BFBFBF',
     marginBottom: 16,
   },
 
   welcome: {
-    color: '#FFFFFF',
+    color: '#BFBFBF',
     fontSize: 16,
     marginBottom: 24,
     lineHeight: 22,
@@ -412,21 +419,21 @@ const styles = {
   label: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#BFBFBF',
     marginTop: 16,
     marginBottom: 6,
   },
 
   inputWrap: {
     borderBottomWidth: 1,
-    borderColor: '#FFFFFF',
+    borderColor: '#BFBFBF',
     paddingVertical: 10,
     flexDirection: 'row',
     alignItems: 'center',
   },
 
   input: {
-    color: '#FFFFFF',
+    flex: 1,
     fontSize: 16,
     paddingVertical: 4,
   },
@@ -442,31 +449,49 @@ const styles = {
     height: 20,
     borderRadius: 20,
     borderWidth: 1.5,
-    borderColor: '#79A394',
+    borderColor: '#BFBFBF',
   },
 
   checkboxOn: {
-    backgroundColor: '#79A394',
-    borderColor: '#79A394',
+    backgroundColor: '#02735E',
+    borderColor: '#02735E',
   },
 
   checkText: {
     marginLeft: 10,
     fontSize: 14,
-    color: '#FFFFFF',
+    color: '#BFBFBF',
   },
 
   submitBtn: {
     marginTop: 30,
-    backgroundColor: '#2F5D50',
+    backgroundColor: '#035951',
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
   },
 
   submitText: {
-    color: '#FFFFFF',
+    color: '#BFBFBF',
     fontSize: 16,
     fontWeight: '700',
+  },
+  xIcon: {
+    fontSize: 18,
+    color: '#FF6B6B',
+    marginLeft: 8,
+  },
+
+  okIcon: {
+    fontSize: 18,
+    color: '#7ED957',
+    marginLeft: 8,
+  },
+
+  pwErrorText: {
+    marginTop: 4,
+    color: '#FF6B6B',
+    fontSize: 12,
+    marginLeft: 4,
   },
 };

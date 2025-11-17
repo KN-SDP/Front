@@ -11,9 +11,8 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import styles, { GRADIENT_COLORS } from '../style/LoginStyles';
-import { Ionicons } from '@expo/vector-icons';
 const CONTENT_MAX_WIDTH = 360;
-const PH = '#999';
+const PH = '#607072';
 
 export default function LoginView({
   navigation,
@@ -21,8 +20,6 @@ export default function LoginView({
   setEmail,
   password,
   setPassword,
-  secure,
-  setSecure,
   submitting,
   error,
   canSubmit,
@@ -68,21 +65,9 @@ export default function LoginView({
                 placeholderTextColor={PH}
                 value={password}
                 onChangeText={setPassword}
-                style={[styles.input, { paddingRight: 40 }]}
-                secureTextEntry={secure}
-                returnKeyType="done"
+                style={styles.input}
+                secureTextEntry={true}
               />
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => setSecure((s) => !s)}
-                style={styles.eyeBtn}
-              >
-                <Ionicons
-                  name={secure ? 'eye-off' : 'eye'}
-                  size={22}
-                  color="#FFFFFF"
-                />
-              </Pressable>
             </View>
 
             {!!error && <Text style={styles.errorText}>{error}</Text>}
@@ -118,9 +103,6 @@ export default function LoginView({
               </Pressable>
             </View>
 
-            {/* OR */}
-            <Text style={styles.orText}>or</Text>
-
             {/* 소셜 로그인 버튼 */}
             <Pressable style={[styles.snsBtn, { backgroundColor: '#2DB400' }]}>
               <Text style={styles.snsText}>NAVER</Text>
@@ -131,13 +113,6 @@ export default function LoginView({
             <Pressable style={[styles.snsBtn, { backgroundColor: '#666' }]}>
               <Text style={styles.snsText}>Google</Text>
             </Pressable>
-
-            {/* 하단 */}
-            <View style={styles.footerRow}>
-              <Text style={styles.footerText}>이용약관</Text>
-              <View style={styles.footerDivider} />
-              <Text style={styles.footerText}>개인정보처리방침</Text>
-            </View>
           </View>
         </View>
       </KeyboardAvoidingView>
