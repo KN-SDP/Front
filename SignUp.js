@@ -75,7 +75,8 @@ function toOnlyDigitsPhone(input = '') {
 }
 
 // COMPONENT ─────────────────────────────────────────
-export default function SignUp({ navigation }) {
+export default function SignUp({ navigation, route }) {
+  const { socialEmail, socialName, socialNickname } = route.params || {};
   const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
   const [pw2, setPw2] = useState('');
@@ -86,6 +87,12 @@ export default function SignUp({ navigation }) {
   const [nickname, setNickname] = useState('');
   const [telDigits, setTelDigits] = useState('');
   const [birthDigits, setBirthDigits] = useState('');
+
+  React.useEffect(() => {
+    if (socialEmail) setEmail(socialEmail);
+    if (socialName) setName(socialName);
+    if (socialNickname) setNickname(socialNickname);
+  }, [socialEmail, socialName, socialNickname]);
 
   const [agreeAll, setAgreeAll] = useState(false);
   const [agree1, setAgree1] = useState(false);

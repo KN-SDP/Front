@@ -4,9 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Text, TextInput } from 'react-native';
+import { Platform, Linking } from 'react-native';
 
-// ====== 페이지들 ======
 import Login from './Login';
 import SignUp from './SignUp';
 import FindId from './FindId';
@@ -25,7 +24,84 @@ export default function App() {
   const [initialRoute, setInitialRoute] = useState('loading');
   const [fontsReady, setFontsReady] = useState(false);
 
-  // ------ 1) 자동 로그인 체크 ------
+  // --------------------------------------
+  // 🔥 소셜 로그인 콜백 URL 파싱 함수
+  // --------------------------------------
+  const handleSocialCallback = async (url) => {
+    if (!url) return;
+
+    const { queryParams } = Linking.parse(url);
+    if (!queryParams) return;
+
+    const { token, isNewUser, email, username, nickname } = queryParams;
+
+    console.log('소셜 로그인 콜백:', queryParams);
+
+    if (!token) return;
+
+    if (isNewUser === 'true') {
+      navigationRef?.navigate('SignUp', {
+        socialEmail: email,
+        socialName: username,
+        socialNickname: nickname,
+      });
+    } else {
+      await AsyncStorage.setItem('accessToken', token);
+      navigationRef?.navigate('Home');
+    }
+  };
+
+  // --------------------------------------
+  // 🔥 Linking 이벤트 리스너 등록
+  // --------------------------------------
+  useEffect(() => {
+    // 앱 시작 시 URL 확인
+    Linking.getInitialURL().then((url) => {
+      if (url && url.includes('oauth-redirect')) {
+        handleSocialCallback(url);
+      }
+    });
+
+    // 앱이 열린 상태에서 URL 들어올 때
+    const sub = Linking.addEventListener('url', (event) => {
+      if (event.url && event.url.includes('oauth-redirect')) {
+        handleSocialCallback(event.url);
+      }
+    });
+
+    return () => sub.remove();
+  }, []);
+  // -------------------------------------------------------
+  // 2️⃣ 웹 전용 redirect 파싱 (★ 여기 넣는 것이 정답)
+  // -------------------------------------------------------
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const params = new URLSearchParams(window.location.search);
+
+      const token = params.get('token');
+      const isNewUser = params.get('isNewUser');
+      const email = params.get('email');
+      const username = params.get('username'); // ✔ 수정됨
+      const nickname = params.get('nickname');
+
+      if (token && isNewUser) {
+        if (isNewUser === 'true') {
+          navigationRef?.navigate('SignUp', {
+            socialEmail: email,
+            socialName: username,
+            socialNickname: nickname,
+          });
+        } else {
+          AsyncStorage.setItem('accessToken', token);
+          navigationRef?.navigate('Home');
+        }
+      }
+    }
+  }, []);
+
+  // --------------------------------------
+  // 1) 자동 로그인 체크
+  // --------------------------------------
   useEffect(() => {
     const checkLogin = async () => {
       const token = await AsyncStorage.getItem('accessToken');
@@ -34,7 +110,9 @@ export default function App() {
     checkLogin();
   }, []);
 
-  // ------ 2) Pretendard + Ionicons 폰트 로딩 ------
+  // --------------------------------------
+  // 2) 폰트 로딩
+  // --------------------------------------
   useEffect(() => {
     async function loadFonts() {
       await Font.loadAsync({
@@ -44,18 +122,17 @@ export default function App() {
         PretendardMedium: require('./assets/fonts/Pretendard-Medium.ttf'),
         PretendardSemiBold: require('./assets/fonts/Pretendard-SemiBold.ttf'),
       });
-
       setFontsReady(true);
     }
-
     loadFonts();
   }, []);
 
-  // ------ 3) 폰트 또는 초기 라우트 준비 안되면 렌더 X ------
   if (initialRoute === 'loading' || !fontsReady) return null;
 
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      ref={(ref) => (navigationRef = ref)} // 🔥 navigationRef 추가
+    >
       <Stack.Navigator
         initialRouteName={initialRoute}
         screenOptions={{ headerShown: false }}
@@ -75,3 +152,5 @@ export default function App() {
     </NavigationContainer>
   );
 }
+
+let navigationRef = null; // 🔥 Navigator 전역 참조용

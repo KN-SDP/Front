@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import styles, { GRADIENT_COLORS } from '../style/LoginStyles';
+import * as Linking from 'expo-linking';
+
 const CONTENT_MAX_WIDTH = 360;
 const PH = '#607072';
 
@@ -103,14 +105,39 @@ export default function LoginView({
               </Pressable>
             </View>
 
-            {/* 소셜 로그인 버튼 */}
-            <Pressable style={[styles.snsBtn, { backgroundColor: '#2DB400' }]}>
+            {/* NAVER */}
+            <Pressable
+              style={[styles.snsBtn, { backgroundColor: '#2DB400' }]}
+              onPress={() =>
+                Linking.openURL(
+                  'https://knusdpsl.mooo.com/oauth2/authorization/naver'
+                )
+              }
+            >
               <Text style={styles.snsText}>NAVER</Text>
             </Pressable>
-            <Pressable style={[styles.snsBtn, { backgroundColor: '#FEE500' }]}>
+
+            {/* KAKAO */}
+            <Pressable
+              style={[styles.snsBtn, { backgroundColor: '#FEE500' }]}
+              onPress={() =>
+                Linking.openURL(
+                  'https://knusdpsl.mooo.com/oauth2/authorization/kakao'
+                )
+              }
+            >
               <Text style={[styles.snsText, { color: '#000' }]}>카카오</Text>
             </Pressable>
-            <Pressable style={[styles.snsBtn, { backgroundColor: '#666' }]}>
+
+            {/* GOOGLE */}
+            <Pressable
+              style={[styles.snsBtn, { backgroundColor: '#666' }]}
+              onPress={() =>
+                Linking.openURL(
+                  'https://knusdpsl.mooo.com/oauth2/authorization/google'
+                )
+              }
+            >
               <Text style={styles.snsText}>Google</Text>
             </Pressable>
           </View>
