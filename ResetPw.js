@@ -1,210 +1,249 @@
-// ResetPw.js
+// ResetPw.js (Smart Ledger 비밀번호 UI 통합 버전)
 import React, { useState } from 'react';
 import {
   View,
   Text,
   TextInput,
   Pressable,
-  StyleSheet,
   SafeAreaView,
-  Alert,
+  KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
-import { useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRoute } from '@react-navigation/native';
 import AuthService from './AuthService';
 
-// 공통 알림
+const PH = '#607072';
+
 const showAlert = (title, message) => {
   if (Platform.OS === 'web') alert(`${title}\n\n${message}`);
   else Alert.alert(title, message);
 };
 
 export default function ResetPw({ navigation }) {
-  const route = useRoute();
-  const passedToken = route.params?.resetToken || '';
+  const { params } = useRoute();
+  const resetToken = params?.resetToken || '';
 
-  const [resetToken, setResetToken] = useState(passedToken);
-  const [code, setCode] = useState(''); // 인증번호 (있다면)
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [showNewPw, setShowNewPw] = useState(false);
-  const [showConfirmPw, setShowConfirmPw] = useState(false);
 
-  // 비밀번호 유효성 검사
-  const validatePassword = (pw) => {
-    if (pw.length < 8) return '비밀번호는 8자 이상이어야 합니다.';
-    if (!/[0-9]/.test(pw) || !/[a-zA-Z]/.test(pw))
-      return '영문과 숫자를 모두 포함해야 합니다.';
-    return '';
-  };
+  // 유효성 체크
+  const isPwValidLength = newPw.length >= 8 && newPw.length <= 20;
+  const isPwMatch = newPw === confirmPw;
+
+  const canSubmit =
+    resetToken.trim() && isPwValidLength && isPwMatch && confirmPw.length > 0;
 
   const handleResetPw = async () => {
-    if (!resetToken.trim()) return showAlert('알림', '토큰 없음');
-    if (!newPw.trim()) return showAlert('알림', '새 비밀번호를 입력해주세요.');
-    if (!confirmPw.trim())
-      return showAlert('알림', '비밀번호 확인을 입력해주세요.');
-    if (newPw !== confirmPw)
-      return showAlert('알림', '비밀번호가 일치하지 않습니다.');
-
-    const pwError = validatePassword(newPw);
-    if (pwError) return showAlert('알림', pwError);
+    if (!canSubmit) {
+      showAlert('알림', '입력값을 다시 확인해주세요.');
+      return;
+    }
 
     try {
-      if (submitting) return;
       setSubmitting(true);
-      setError('');
 
       const payload = {
         resetToken: resetToken.trim(),
         newPassword: newPw,
-        checkedPassword: confirmPw, // ✅ 백엔드 명세에 맞게 key 수정
+        checkedPassword: confirmPw,
       };
 
       const res = await AuthService.resetPw(payload);
 
       if (res.success) {
-        showAlert('완료', res.message);
+        showAlert('완료', '비밀번호가 성공적으로 재설정되었습니다.');
         navigation.replace('Login');
       } else {
-        showAlert('알림', res.message);
+        showAlert('오류', res.message || '재설정 실패');
       }
     } catch (err) {
-      console.error('ResetPw Error:', err);
       showAlert('오류', '서버 요청 중 문제가 발생했습니다.');
     } finally {
       setSubmitting(false);
     }
-    console.log('passedToken:', resetToken);
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={28} color="black" />
+    <KeyboardAvoidingView
+      behavior={Platform.select({ ios: 'padding', android: undefined })}
+      style={styles.container}
+    >
+      <SafeAreaView style={{ flex: 1 }}>
+        {/* HEADER */}
+        <View style={styles.header}>
+          <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
+            <Ionicons name="chevron-back" size={28} color="#BFBFBF" />
+          </Pressable>
+          <Text style={styles.headerTitle}>비밀번호 재설정</Text>
+        </View>
+
+        {/* FORM */}
+        <View style={styles.form}>
+          {/* NEW PASSWORD */}
+          <Text style={styles.label}>새 비밀번호</Text>
+
+          <View style={styles.inputWrap}>
+            <TextInput
+              placeholder="8~20자 사이"
+              placeholderTextColor={PH}
+              value={newPw}
+              onChangeText={setNewPw}
+              secureTextEntry={true}
+              style={styles.input}
+            />
+          </View>
+
+          {/* 길이 에러 */}
+          {newPw.length > 0 && newPw.length < 8 && (
+            <Text style={styles.errorText}>8자리 이상이어야 합니다.</Text>
+          )}
+          {newPw.length > 20 && (
+            <Text style={styles.errorText}>20자리 이하여야 합니다.</Text>
+          )}
+
+          {/* CONFIRM PASSWORD */}
+          <Text style={[styles.label, { marginTop: 20 }]}>
+            새 비밀번호 확인
+          </Text>
+
+          <View style={styles.inputRow}>
+            <TextInput
+              placeholder="비밀번호를 다시 입력해주세요"
+              placeholderTextColor={PH}
+              value={confirmPw}
+              onChangeText={setConfirmPw}
+              secureTextEntry={true}
+              style={styles.input}
+            />
+
+            {/* X 또는 O 아이콘 */}
+            {confirmPw.length > 0 && !isPwMatch && (
+              <Text style={styles.xIcon}>✕</Text>
+            )}
+            {confirmPw.length > 0 && isPwMatch && (
+              <Text style={styles.okIcon}>✓</Text>
+            )}
+          </View>
+
+          {/* 비밀번호 불일치 */}
+          {confirmPw.length > 0 && !isPwMatch && (
+            <Text style={styles.errorText}>비밀번호가 일치하지 않습니다.</Text>
+          )}
+        </View>
+
+        {/* SUBMIT BUTTON */}
+        <Pressable
+          onPress={handleResetPw}
+          disabled={!canSubmit || submitting}
+          style={[
+            styles.submitBtn,
+            { opacity: !canSubmit || submitting ? 0.5 : 1 },
+          ]}
+        >
+          <Text style={styles.submitText}>완료</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>비밀번호 재설정</Text>
-      </View>
-
-      {/* 입력 폼 */}
-      <View style={styles.form}>
-        {/* <Text style={styles.label}>이메일</Text>
-        <TextInput
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-          placeholder="가입한 이메일을 입력하세요."
-          placeholderTextColor="#aaa"
-          keyboardType="email-address"
-          autoCapitalize="none"
-        /> */}
-
-        {/* <Text style={styles.label}>인증번호</Text>
-        <TextInput
-          style={styles.input}
-          value={code}
-          onChangeText={setCode}
-          placeholder="이메일로 받은 인증번호 (있을 경우)"
-          placeholderTextColor="#aaa"
-          autoCapitalize="none"
-        /> */}
-
-        <Text style={styles.label}>새 비밀번호</Text>
-        <View style={styles.inputWrapper}>
-          <TextInput
-            style={styles.inputField}
-            value={newPw}
-            onChangeText={setNewPw}
-            placeholder="새 비밀번호를 입력하세요."
-            placeholderTextColor="#aaa"
-            secureTextEntry={!showNewPw}
-            autoCapitalize="none"
-          />
-          <Pressable onPress={() => setShowNewPw(!showNewPw)}>
-            <Ionicons
-              name={showNewPw ? 'eye' : 'eye-off'}
-              size={22}
-              color="#444"
-            />
-          </Pressable>
-        </View>
-
-        <Text style={styles.label}>비밀번호 확인</Text>
-        <View style={styles.inputWrapper}>
-          <TextInput
-            style={styles.inputField}
-            value={confirmPw}
-            onChangeText={setConfirmPw}
-            placeholder="비밀번호를 다시 입력하세요."
-            placeholderTextColor="#aaa"
-            secureTextEntry={!showConfirmPw}
-            autoCapitalize="none"
-          />
-          <Pressable onPress={() => setShowConfirmPw(!showConfirmPw)}>
-            <Ionicons
-              name={showConfirmPw ? 'eye' : 'eye-off'}
-              size={22}
-              color="#444"
-            />
-          </Pressable>
-        </View>
-      </View>
-
-      {/* 버튼 */}
-      <Pressable
-        style={[styles.button, submitting && { opacity: 0.6 }]}
-        onPress={handleResetPw}
-        disabled={submitting}
-      >
-        <Text style={styles.buttonText}>
-          {submitting ? '처리 중...' : '비밀번호 재설정'}
-        </Text>
-      </Pressable>
-    </SafeAreaView>
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', paddingHorizontal: 24 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 16,
-    marginBottom: 32,
-  },
-  backBtn: { padding: 4 },
-  headerTitle: { fontSize: 20, fontWeight: 'bold', marginLeft: 8 },
-  form: { flex: 1 },
-  label: { fontWeight: 'bold', marginBottom: 6 },
-  input: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#999',
-    marginBottom: 24,
-    paddingVertical: 6,
-    fontSize: 16,
-  },
-  button: {
-    backgroundColor: '#000',
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#999',
-    marginBottom: 24,
-  },
-  inputField: {
+/* =====================
+      💅 STYLES
+===================== */
+const styles = {
+  container: {
     flex: 1,
-    paddingVertical: 6,
-    fontSize: 16,
+    backgroundColor: '#022326',
   },
-});
+
+  header: {
+    width: '100%',
+    paddingTop: 40,
+    paddingBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  backBtn: {
+    padding: 6,
+    marginRight: 4,
+  },
+
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#BFBFBF',
+  },
+
+  form: {
+    paddingHorizontal: 24,
+    marginTop: 40,
+  },
+
+  label: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#BFBFBF',
+    marginBottom: 6,
+  },
+
+  inputWrap: {
+    borderBottomWidth: 1,
+    borderColor: '#BFBFBF',
+    paddingVertical: 10,
+  },
+
+  inputRow: {
+    borderBottomWidth: 1,
+    borderColor: '#BFBFBF',
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  input: {
+    flex: 1,
+    color: '#BFBFBF',
+    fontSize: 16,
+    paddingVertical: 4,
+    outlineStyle: 'none',
+    outlineWidth: 0,
+    outlineColor: 'transparent',
+  },
+
+  submitBtn: {
+    marginTop: 40,
+    backgroundColor: '#035951',
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginHorizontal: 24,
+    alignItems: 'center',
+  },
+
+  submitText: {
+    color: '#BFBFBF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+
+  errorText: {
+    color: '#FF6B6B',
+    fontSize: 12,
+    marginTop: 4,
+  },
+
+  xIcon: {
+    fontSize: 18,
+    color: '#FF6B6B',
+    marginLeft: 8,
+  },
+
+  okIcon: {
+    fontSize: 18,
+    color: '#7ED957',
+    marginLeft: 8,
+  },
+};

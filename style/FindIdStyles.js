@@ -49,6 +49,7 @@ export default StyleSheet.create({
     color: '#BFBFBF',
     outlineStyle: 'none',
     outlineWidth: 0,
+    outlineColor: 'transparent',
   },
 
   submitBtn: {
