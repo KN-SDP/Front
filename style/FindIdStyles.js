@@ -1,76 +1,74 @@
-// FindIdStyles.js
-import { StyleSheet } from 'react-native';
+// FindIdStyles.js (SignUp.js 스타일 통일)
+import { StyleSheet, Platform } from 'react-native';
 
 export default StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    paddingHorizontal: 24,
-  },
-
-  /* 헤더 */
   header: {
+    width: '100%',
+    paddingTop: 40,
+    paddingBottom: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 16,
-    marginBottom: 32,
-  },
-  backBtn: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginLeft: 8,
   },
 
-  /* 폼 */
-  form: {
-    flex: 1,
+  backBtn: {
+    padding: 6,
+    marginRight: 4,
   },
+
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#BFBFBF',
+  },
+
+  form: {
+    marginTop: 10,
+    width: '100%',
+  },
+
   label: {
-    fontWeight: 'bold',
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#BFBFBF',
+    marginTop: 24,
     marginBottom: 6,
   },
-  input: {
+
+  inputWrap: {
     borderBottomWidth: 1,
-    borderBottomColor: '#999',
-    marginBottom: 24,
-    paddingVertical: 6,
-    fontSize: 16,
-  },
-
-  /* 버튼 */
-  button: {
-    backgroundColor: '#000',
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-
-  /* 푸터 */
-  footer: {
+    borderColor: '#607072',
+    paddingVertical: 10,
     flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 24,
-    marginTop: 'auto',
-    gap: 20,
-  },
-  footerText: {
-    color: '#000',
-    fontSize: 13,
+    alignItems: 'center',
   },
 
-  /* 에러 메시지 */
+  input: {
+    flex: 1,
+    fontSize: 15,
+    paddingVertical: Platform.OS === 'web' ? 4 : 2,
+    color: '#BFBFBF',
+    outlineStyle: 'none',
+    outlineWidth: 0,
+  },
+
+  submitBtn: {
+    marginTop: 450,
+    backgroundColor: '#035951',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  submitText: {
+    color: '#C8D7D3',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+
   errorText: {
-    color: 'red',
-    marginBottom: 16,
-    fontSize: 14,
+    color: '#FF6B6B',
+    marginBottom: 8,
+    fontSize: 13,
   },
 });

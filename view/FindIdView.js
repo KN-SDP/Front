@@ -1,12 +1,13 @@
-// FindIdView.js
+// FindIdView.js (FindId.js 로직에 정확히 맞게 수정)
 import React from 'react';
 import {
   View,
   Text,
   TextInput,
   Pressable,
-  SafeAreaView,
+  KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import styles from '../style/FindIdStyles';
@@ -22,92 +23,83 @@ export default function FindIdView({
   submitting,
   error,
   handleFindId,
+  canSubmit,
 }) {
   return (
-    <SafeAreaView style={styles.container}>
-      {/* 헤더 */}
+    <KeyboardAvoidingView
+      behavior={Platform.select({ ios: 'padding', android: undefined })}
+      style={{ flex: 1, backgroundColor: '#022326' }}
+    >
+      {/* HEADER */}
       <View style={styles.header}>
-        <Pressable
-          onPress={() => navigation?.goBack?.()}
-          accessibilityRole="button"
-          accessibilityLabel="뒤로가기"
-          hitSlop={8}
-          style={styles.backBtn}
-        >
-          <Ionicons name="chevron-back" size={28} color="black" />
+        <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back" size={26} color="#BFBFBF" />
         </Pressable>
-
-        <Text style={styles.headerTitle}>ID 찾기</Text>
+        <Text style={styles.headerTitle}>아이디 찾기</Text>
       </View>
 
-      {/* 폼 */}
-      <View style={styles.form}>
-        {!!error && <Text style={styles.errorText}>{error}</Text>}
-
-        {/* 이름 */}
-        <Text style={styles.label}>이름</Text>
-        <TextInput
-          style={styles.input}
-          value={name}
-          onChangeText={setName}
-          placeholder="이름을 입력하세요."
-          placeholderTextColor="#aaa"
-          autoCapitalize="words"
-          autoCorrect={false}
-          textContentType="name"
-        />
-
-        {/* 전화번호 */}
-        <Text style={styles.label}>Tel</Text>
-        <TextInput
-          style={styles.input}
-          value={phoneNum}
-          onChangeText={setPhoneNum}
-          placeholder="전화번호를 입력하세요."
-          placeholderTextColor="#aaa"
-          keyboardType={Platform.OS === 'web' ? 'default' : 'number-pad'}
-          inputMode="numeric"
-          autoCorrect={false}
-          autoCapitalize="none"
-          textContentType="telephoneNumber"
-          maxLength={13}
-        />
-
-        {/* 생년월일 */}
-        <Text style={styles.label}>생년월일</Text>
-        <TextInput
-          style={styles.input}
-          value={birth}
-          onChangeText={setBirth}
-          placeholder="yyyy-mm-dd"
-          placeholderTextColor="#aaa"
-          keyboardType={Platform.OS === 'web' ? 'default' : 'number-pad'}
-          inputMode="numeric"
-          autoCorrect={false}
-          autoCapitalize="none"
-          textContentType="none"
-          maxLength={10}
-        />
-      </View>
-
-      {/* 버튼 */}
-      <Pressable
-        style={[styles.button, submitting && { opacity: 0.6 }]}
-        onPress={handleFindId}
-        disabled={submitting}
-        accessibilityRole="button"
-        accessibilityLabel="아이디 찾기"
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingHorizontal: 20,
+          paddingVertical: 20,
+        }}
       >
-        <Text style={styles.buttonText}>
-          {submitting ? '확인 중...' : 'ID 찾기'}
-        </Text>
-      </Pressable>
+        {/* ERROR */}
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-      {/* 푸터 */}
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>이용약관</Text>
-        <Text style={styles.footerText}>개인정보처리방침</Text>
-      </View>
-    </SafeAreaView>
+        {/* ===== 휴대전화 번호 ===== */}
+        <Text style={styles.label}>휴대전화 번호</Text>
+        <View style={styles.inputWrap}>
+          <TextInput
+            style={styles.input}
+            placeholder="- 없이 숫자만 입력해 주세요"
+            placeholderTextColor="#607072"
+            value={phoneNum}
+            onChangeText={setPhoneNum} // 하이픈 자동 적용됨
+            keyboardType="number-pad"
+          />
+        </View>
+
+        {/* ===== 생년월일 ===== */}
+        <Text style={styles.label}>생년월일</Text>
+        <View style={styles.inputWrap}>
+          <TextInput
+            style={styles.input}
+            placeholder="'19910101'처럼 입력해주세요"
+            placeholderTextColor="#607072"
+            value={birth}
+            onChangeText={setBirth} // YYYY-MM-DD 자동 포맷
+            keyboardType="number-pad"
+          />
+        </View>
+
+        {/* ===== 이름 ===== */}
+        <Text style={styles.label}>이름</Text>
+        <View style={styles.inputWrap}>
+          <TextInput
+            style={styles.input}
+            placeholder="이름을 입력해주세요"
+            placeholderTextColor="#607072"
+            value={name}
+            onChangeText={setName}
+          />
+        </View>
+
+        {/* ===== 버튼 ===== */}
+        <Pressable
+          onPress={handleFindId}
+          disabled={!canSubmit || submitting}
+          style={[
+            styles.submitBtn,
+            { opacity: !canSubmit || submitting ? 0.5 : 1 },
+          ]}
+        >
+          <Text style={styles.submitText}>
+            {submitting ? '확인 중...' : '다음'}
+          </Text>
+        </Pressable>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

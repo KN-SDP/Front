@@ -96,11 +96,11 @@ export default function FindId({ navigation }) {
       // 기대 응답: { success: boolean, email?: string, message?: string }
 
       if (response?.success && response?.email) {
-        showAlert('아이디 찾기 결과', `가입된 이메일: ${response.email}`);
-      } else {
-        const msg = response?.message || '아이디를 찾을 수 없습니다.';
-        setError(msg);
-        showAlert('알림', msg);
+        navigation.navigate('FindIdResult', {
+          name: name.trim(),
+          email: response.email,
+        });
+        return;
       }
     } catch (err) {
       console.error('Find ID Error:', err);
@@ -111,6 +111,10 @@ export default function FindId({ navigation }) {
       setSubmitting(false);
     }
   };
+  const canSubmit =
+    name.trim().length > 0 &&
+    /^\d{3}-\d{3,4}-\d{4}$/.test(phoneNum) &&
+    /^\d{4}-\d{2}-\d{2}$/.test(birth);
 
   return (
     <FindIdView
@@ -124,6 +128,7 @@ export default function FindId({ navigation }) {
       submitting={submitting}
       error={error}
       handleFindId={handleFindId}
+      canSubmit={canSubmit}
     />
   );
 }

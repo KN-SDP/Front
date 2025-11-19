@@ -1,3 +1,5 @@
+export let navigationRef = null;
+
 import * as Font from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState, useEffect } from 'react';
@@ -17,7 +19,7 @@ import ResetPw from './ResetPw';
 import MyPage from './MyPage';
 import History from './History';
 import HistoryDetail from './HistoryDetail';
-
+import FindIdResult from './FindIdResult';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -148,9 +150,8 @@ export default function App() {
         <Stack.Screen name="MyPage" component={MyPage} />
         <Stack.Screen name="History" component={History} />
         <Stack.Screen name="HistoryDetail" component={HistoryDetail} />
+        <Stack.Screen name="FindIdResult" component={FindIdResult} />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
-
-let navigationRef = null; // 🔥 Navigator 전역 참조용
