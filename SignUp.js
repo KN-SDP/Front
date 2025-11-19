@@ -101,6 +101,29 @@ export default function SignUp({ navigation, route }) {
 
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState('');
+  const handleCheckEmail = async () => {
+    if (!email.trim()) {
+      showAlert('알림', '이메일을 입력해주세요.');
+      return;
+    }
+
+    try {
+      const res = await AuthService.checkDuplicatedEmail(email);
+
+      if (!res.success) {
+        showAlert('오류', res.message || '중복 확인 실패');
+        return;
+      }
+
+      if (res.available === true) {
+        showAlert('확인', '사용 가능한 이메일입니다!');
+      } else {
+        showAlert('중복', '이미 존재하는 이메일입니다.');
+      }
+    } catch (e) {
+      showAlert('오류', '중복 확인 중 문제가 발생했습니다.');
+    }
+  };
 
   const syncAllFromItems = (a1, a2, a3) => setAgreeAll(a1 && a2 && a3);
 
@@ -192,6 +215,23 @@ export default function SignUp({ navigation, route }) {
     } finally {
       setSubmitting(false);
     }
+    const handleCheckEmail = async () => {
+      if (!email) {
+        showAlert('알림', '이메일을 입력해주세요.');
+        return;
+      }
+
+      try {
+        const res = await AuthService.checkDuplicatedEmail(email);
+        if (res.success) {
+          showAlert('성공', '사용 가능한 이메일입니다!');
+        } else {
+          showAlert('오류', res.message || '이미 사용 중인 이메일입니다.');
+        }
+      } catch (e) {
+        showAlert('오류', '중복 확인 중 문제가 발생했습니다.');
+      }
+    };
   };
 
   return (
@@ -225,7 +265,8 @@ export default function SignUp({ navigation, route }) {
 
           {/* 이메일 */}
           <Text style={styles.label}>아이디</Text>
-          <View style={styles.inputWrap}>
+
+          <View style={styles.inputRow}>
             <TextInput
               placeholder="ex)kangnam@naver.com"
               placeholderTextColor={PH}
@@ -233,7 +274,12 @@ export default function SignUp({ navigation, route }) {
               onChangeText={setEmail}
               style={styles.input}
             />
+
+            <Pressable style={styles.checkBtn} onPress={handleCheckEmail}>
+              <Text style={styles.checkBtnText}>중복확인</Text>
+            </Pressable>
           </View>
+
           <Text style={styles.label}>이름</Text>
           <View style={styles.inputWrap}>
             <TextInput
@@ -504,5 +550,25 @@ const styles = {
     color: '#FF6B6B',
     fontSize: 12,
     marginLeft: 4,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderColor: '#55696B',
+    paddingBottom: 6,
+  },
+  checkBtn: {
+    marginLeft: 10,
+    backgroundColor: '#035951',
+    paddingVertical: 3,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+  },
+
+  checkBtnText: {
+    color: '#BFBFBF',
+    fontSize: 13,
+    fontWeight: '500',
   },
 };

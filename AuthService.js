@@ -525,6 +525,29 @@ const AuthService = {
       return { success: false, income: 0, expense: 0, total: 0 };
     }
   },
+  // AuthService.js
+
+  async checkDuplicatedEmail(email) {
+    try {
+      const res = await api.post('/users/check-email', {
+        email: email.trim(),
+      });
+
+      return {
+        success: true,
+        available: res.data, // true면 사용 가능, false면 이미 존재
+      };
+    } catch (e) {
+      console.log('❌ checkDuplicatedEmail 오류:', e.response?.data || e);
+      return {
+        success: false,
+        available: false,
+        message:
+          e?.response?.data?.message ||
+          '이메일 중복 확인 중 오류가 발생했습니다.',
+      };
+    }
+  },
 };
 
 export default AuthService;
