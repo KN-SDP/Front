@@ -36,6 +36,7 @@ export default function FindIdView({
         >
           <Ionicons name="chevron-back" size={28} color="black" />
         </Pressable>
+
         <Text style={styles.headerTitle}>ID 찾기</Text>
       </View>
 
@@ -43,6 +44,7 @@ export default function FindIdView({
       <View style={styles.form}>
         {!!error && <Text style={styles.errorText}>{error}</Text>}
 
+        {/* 이름 */}
         <Text style={styles.label}>이름</Text>
         <TextInput
           style={styles.input}
@@ -55,6 +57,7 @@ export default function FindIdView({
           textContentType="name"
         />
 
+        {/* 전화번호 */}
         <Text style={styles.label}>Tel</Text>
         <TextInput
           style={styles.input}
@@ -70,6 +73,7 @@ export default function FindIdView({
           maxLength={13}
         />
 
+        {/* 생년월일 */}
         <Text style={styles.label}>생년월일</Text>
         <TextInput
           style={styles.input}

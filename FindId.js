@@ -1,16 +1,6 @@
 // FindId.js
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  StyleSheet,
-  Platform,
-  SafeAreaView,
-  Alert,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
+import { Platform, Alert } from 'react-native';
 import AuthService from './AuthService';
 import FindIdView from './view/FindIdView';
 

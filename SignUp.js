@@ -266,7 +266,7 @@ export default function SignUp({ navigation, route }) {
           {/* 이메일 */}
           <Text style={styles.label}>아이디</Text>
 
-          <View style={styles.inputRow}>
+          <View style={styles.inputWrap}>
             <TextInput
               placeholder="ex)kangnam@naver.com"
               placeholderTextColor={PH}

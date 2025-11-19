@@ -2,17 +2,36 @@
 import { StyleSheet } from 'react-native';
 
 export default StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', paddingHorizontal: 24 },
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    paddingHorizontal: 24,
+  },
+
+  /* 헤더 */
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 16,
     marginBottom: 32,
   },
-  backBtn: { padding: 4 },
-  headerTitle: { fontSize: 20, fontWeight: 'bold', marginLeft: 8 },
-  form: { flex: 1 },
-  label: { fontWeight: 'bold', marginBottom: 6 },
+  backBtn: {
+    padding: 4,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+
+  /* 폼 */
+  form: {
+    flex: 1,
+  },
+  label: {
+    fontWeight: 'bold',
+    marginBottom: 6,
+  },
   input: {
     borderBottomWidth: 1,
     borderBottomColor: '#999',
@@ -20,6 +39,8 @@ export default StyleSheet.create({
     paddingVertical: 6,
     fontSize: 16,
   },
+
+  /* 버튼 */
   button: {
     backgroundColor: '#000',
     paddingVertical: 14,
@@ -27,7 +48,13 @@ export default StyleSheet.create({
     alignItems: 'center',
     marginTop: 16,
   },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+
+  /* 푸터 */
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -35,6 +62,15 @@ export default StyleSheet.create({
     marginTop: 'auto',
     gap: 20,
   },
-  footerText: { color: '#000', fontSize: 13 },
-  errorText: { color: 'red', marginBottom: 16, fontSize: 14 },
+  footerText: {
+    color: '#000',
+    fontSize: 13,
+  },
+
+  /* 에러 메시지 */
+  errorText: {
+    color: 'red',
+    marginBottom: 16,
+    fontSize: 14,
+  },
 });
