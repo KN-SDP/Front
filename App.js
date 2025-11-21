@@ -20,24 +20,83 @@ import MyPage from './MyPage';
 import History from './History';
 import HistoryDetail from './HistoryDetail';
 import FindIdResult from './FindIdResult';
+
 const Stack = createNativeStackNavigator();
+
+/* ----------------------------------------------------------
+   🔥 1) 소셜 콜백 처리 함수 (모바일/웹 공용)
+-----------------------------------------------------------*/
+const handleSocialCallback = async (params) => {
+  if (!params) return;
+
+  const token = params.token;
+  const isNewUser = params.isNewUser;
+  const email = params.email ?? '';
+  const username = params.username ?? '';
+  const nickname = params.nickname ?? '';
+
+  console.log('✔ 소셜 로그인 파라미터:', params);
+
+  if (!token) return;
+
+  if (isNewUser === 'true') {
+    // 신규 유저 → 회원가입 자동 기입
+    navigationRef?.navigate('SignUp', {
+      socialEmail: email,
+      socialName: username,
+      socialNickname: nickname,
+    });
+  } else {
+    // 기존 유저 → 액세스 토큰 저장 후 홈 이동
+    await AsyncStorage.setItem('accessToken', token);
+    navigationRef?.navigate('Home');
+  }
+};
 
 export default function App() {
   const [initialRoute, setInitialRoute] = useState('loading');
   const [fontsReady, setFontsReady] = useState(false);
 
-  // --------------------------------------
-  // 🔥 소셜 로그인 콜백 URL 파싱 함수
-  // --------------------------------------
-  const handleSocialCallback = async (url) => {
-    if (!url) return;
+  /* ----------------------------------------------------------
+     🔥 2) 모바일 Linking 처리
+  -----------------------------------------------------------*/
+  useEffect(() => {
+    if (Platform.OS === 'web') return; // 웹에서는 패스
 
-    const { queryParams } = Linking.parse(url);
-    if (!queryParams) return;
+    // 앱이 처음 열렸을 때
+    Linking.getInitialURL().then((url) => {
+      if (!url) return;
+      if (!url.includes('oauth-redirect')) return;
 
-    const { token, isNewUser, email, username, nickname } = queryParams;
+      const parsed = Linking.parse(url);
+      handleSocialCallback(parsed.queryParams);
+    });
 
-    console.log('소셜 로그인 콜백:', queryParams);
+    // 앱이 열린 상태에서 URL 들어올 때
+    const sub = Linking.addEventListener('url', (event) => {
+      if (!event.url) return;
+      if (!event.url.includes('oauth-redirect')) return;
+
+      const parsed = Linking.parse(event.url);
+      handleSocialCallback(parsed.queryParams);
+    });
+
+    return () => sub.remove();
+  }, []);
+
+  /* ----------------------------------------------------------
+     🔥 3) 웹 전용 URL 파싱 처리
+  -----------------------------------------------------------*/
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+
+    const params = new URLSearchParams(window.location.search);
+
+    const token = params.get('token');
+    const isNewUser = params.get('isNewUser');
+    const email = params.get('email');
+    const username = params.get('username');
+    const nickname = params.get('nickname');
 
     if (!token) return;
 
@@ -48,62 +107,14 @@ export default function App() {
         socialNickname: nickname,
       });
     } else {
-      await AsyncStorage.setItem('accessToken', token);
+      AsyncStorage.setItem('accessToken', token);
       navigationRef?.navigate('Home');
     }
-  };
-
-  // --------------------------------------
-  // 🔥 Linking 이벤트 리스너 등록
-  // --------------------------------------
-  useEffect(() => {
-    // 앱 시작 시 URL 확인
-    Linking.getInitialURL().then((url) => {
-      if (url && url.includes('oauth-redirect')) {
-        handleSocialCallback(url);
-      }
-    });
-
-    // 앱이 열린 상태에서 URL 들어올 때
-    const sub = Linking.addEventListener('url', (event) => {
-      if (event.url && event.url.includes('oauth-redirect')) {
-        handleSocialCallback(event.url);
-      }
-    });
-
-    return () => sub.remove();
-  }, []);
-  // -------------------------------------------------------
-  // 2️⃣ 웹 전용 redirect 파싱 (★ 여기 넣는 것이 정답)
-  // -------------------------------------------------------
-  useEffect(() => {
-    if (Platform.OS === 'web') {
-      const params = new URLSearchParams(window.location.search);
-
-      const token = params.get('token');
-      const isNewUser = params.get('isNewUser');
-      const email = params.get('email');
-      const username = params.get('username'); // ✔ 수정됨
-      const nickname = params.get('nickname');
-
-      if (token && isNewUser) {
-        if (isNewUser === 'true') {
-          navigationRef?.navigate('SignUp', {
-            socialEmail: email,
-            socialName: username,
-            socialNickname: nickname,
-          });
-        } else {
-          AsyncStorage.setItem('accessToken', token);
-          navigationRef?.navigate('Home');
-        }
-      }
-    }
   }, []);
 
-  // --------------------------------------
-  // 1) 자동 로그인 체크
-  // --------------------------------------
+  /* ----------------------------------------------------------
+     🔥 4) 자동 로그인 체크
+  -----------------------------------------------------------*/
   useEffect(() => {
     const checkLogin = async () => {
       const token = await AsyncStorage.getItem('accessToken');
@@ -112,9 +123,9 @@ export default function App() {
     checkLogin();
   }, []);
 
-  // --------------------------------------
-  // 2) 폰트 로딩
-  // --------------------------------------
+  /* ----------------------------------------------------------
+     🔥 5) 폰트 로딩
+  -----------------------------------------------------------*/
   useEffect(() => {
     async function loadFonts() {
       await Font.loadAsync({
@@ -132,9 +143,7 @@ export default function App() {
   if (initialRoute === 'loading' || !fontsReady) return null;
 
   return (
-    <NavigationContainer
-      ref={(ref) => (navigationRef = ref)} // 🔥 navigationRef 추가
-    >
+    <NavigationContainer ref={(ref) => (navigationRef = ref)}>
       <Stack.Navigator
         initialRouteName={initialRoute}
         screenOptions={{ headerShown: false }}

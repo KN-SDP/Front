@@ -108,11 +108,16 @@ export default function LoginView({
             {/* NAVER */}
             <Pressable
               style={[styles.snsBtn, { backgroundColor: '#2DB400' }]}
-              onPress={() =>
-                Linking.openURL(
-                  'https://knusdpsl.mooo.com/oauth2/authorization/naver'
-                )
-              }
+              onPress={() => {
+                const redirect = encodeURIComponent(window.location.origin);
+                const url = `https://knusdpsl.mooo.com/oauth2/authorization/naver?redirect_uri=${redirect}`;
+
+                if (Platform.OS === 'web') {
+                  window.location.href = url;
+                } else {
+                  Linking.openURL(url);
+                }
+              }}
             >
               <Text style={styles.snsText}>NAVER</Text>
             </Pressable>
@@ -120,11 +125,16 @@ export default function LoginView({
             {/* KAKAO */}
             <Pressable
               style={[styles.snsBtn, { backgroundColor: '#FEE500' }]}
-              onPress={() =>
-                Linking.openURL(
-                  'https://knusdpsl.mooo.com/oauth2/authorization/kakao'
-                )
-              }
+              onPress={() => {
+                const redirect = encodeURIComponent(window.location.origin);
+                const url = `https://knusdpsl.mooo.com/oauth2/authorization/kakao?redirect_uri=${redirect}`;
+
+                if (Platform.OS === 'web') {
+                  window.location.href = url;
+                } else {
+                  Linking.openURL(url);
+                }
+              }}
             >
               <Text style={[styles.snsText, { color: '#000' }]}>카카오</Text>
             </Pressable>
@@ -132,11 +142,16 @@ export default function LoginView({
             {/* GOOGLE */}
             <Pressable
               style={[styles.snsBtn, { backgroundColor: '#666' }]}
-              onPress={() =>
-                Linking.openURL(
-                  'https://knusdpsl.mooo.com/oauth2/authorization/google'
-                )
-              }
+              onPress={() => {
+                const redirect = encodeURIComponent(window.location.origin);
+                const url = `https://knusdpsl.mooo.com/oauth2/authorization/google?redirect_uri=${redirect}`;
+
+                if (Platform.OS === 'web') {
+                  window.location.href = url;
+                } else {
+                  Linking.openURL(url);
+                }
+              }}
             >
               <Text style={styles.snsText}>Google</Text>
             </Pressable>
