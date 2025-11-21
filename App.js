@@ -82,6 +82,8 @@ export default function App() {
       const username = decoded.username;
       const nickname = decoded.nickname;
 
+      setInitialRoute(null);
+
       if (isNewUser === 'true') {
         navigationRef?.navigate('SignUp', {
           socialEmail: email,
@@ -158,12 +160,12 @@ export default function App() {
   /* --------------------------------------------
      🔥 5) 모든 준비가 끝나기 전엔 렌더 X
   ---------------------------------------------*/
-  if (!oAuthReady || !fontsReady || !initialRoute) return null;
+  if (!oAuthReady || !fontsReady) return null;
 
   return (
     <NavigationContainer ref={(ref) => (navigationRef = ref)}>
       <Stack.Navigator
-        initialRouteName={initialRoute}
+        initialRouteName={initialRoute ?? 'Login'}
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="Login" component={Login} />
