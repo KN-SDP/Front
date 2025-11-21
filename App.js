@@ -1,8 +1,6 @@
-export let navigationRef = null;
-
 import * as Font from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -24,43 +22,17 @@ import FindIdResult from './FindIdResult';
 
 const Stack = createNativeStackNavigator();
 
-/* --------------------------------------------
-   🔥 소셜 로그인 콜백 처리 (공통)
----------------------------------------------*/
-const handleSocialCallback = async (params) => {
-  if (!params) return;
-
-  const token = params.token;
-  const isNewUser = params.isNewUser;
-  const email = params.email ?? '';
-  const username = params.username ?? '';
-  const nickname = params.nickname ?? '';
-
-  console.log('✔ 소셜 로그인 파라미터:', params);
-
-  if (!token) return;
-
-  if (isNewUser === 'true') {
-    // ➜ 신규 유저 → 회원가입 이동 + initialRoute 변경
-    navigationRef?.navigate('SignUp', {
-      socialEmail: email,
-      socialName: username,
-      socialNickname: nickname,
-    });
-  } else {
-    // ➜ 기존 유저 → 토큰 저장 후 홈
-    await AsyncStorage.setItem('accessToken', token);
-    navigationRef?.navigate('Home');
-  }
-};
-
 export default function App() {
+  // ⭐ useRef로 navigationRef 선언
+  const navigationRef = useRef(null);
+
   const [initialRoute, setInitialRoute] = useState(null);
   const [fontsReady, setFontsReady] = useState(false);
   const [oAuthReady, setOAuthReady] = useState(false);
+  const [pendingOAuth, setPendingOAuth] = useState(null);
 
   /* --------------------------------------------
-     🔥 1) 웹 전용 OAuth 파싱
+     🔥 1) 웹 OAuth 파싱
   ---------------------------------------------*/
   useEffect(() => {
     if (Platform.OS !== 'web') {
@@ -73,26 +45,21 @@ export default function App() {
     const isNewUser = params.get('isNewUser');
 
     if (token) {
-      console.log('웹 OAuth 감지됨 (token만 수신):', token);
-
+      console.log('웹 OAuth 감지됨:', token);
       const decoded = jwtDecode(token);
-      console.log('디코딩 결과:', decoded);
-
-      const email = decoded.email;
-      const username = decoded.username;
-      const nickname = decoded.nickname;
-
-      setInitialRoute(null);
 
       if (isNewUser === 'true') {
-        navigationRef?.navigate('SignUp', {
-          socialEmail: email,
-          socialName: username,
-          socialNickname: nickname,
+        setPendingOAuth({
+          type: 'signup',
+          email: decoded.email,
+          username: decoded.username,
+          nickname: decoded.nickname,
         });
       } else {
-        AsyncStorage.setItem('accessToken', token);
-        navigationRef?.navigate('Home');
+        setPendingOAuth({
+          type: 'login',
+          token,
+        });
       }
     }
 
@@ -100,44 +67,40 @@ export default function App() {
   }, []);
 
   /* --------------------------------------------
-     🔥 2) 모바일 Linking (기존 유지)
+     🔥 2) navigationRef 준비되면 OAuth 처리
   ---------------------------------------------*/
   useEffect(() => {
-    if (Platform.OS === 'web') return;
+    if (!pendingOAuth) return;
+    if (!navigationRef.current) return;
 
-    Linking.getInitialURL().then((url) => {
-      if (!url) return;
-      if (!url.includes('oauth-redirect')) return;
+    console.log('▶ OAuth 처리 시작:', pendingOAuth);
 
-      const parsed = Linking.parse(url);
-      handleSocialCallback(parsed.queryParams);
-    });
+    if (pendingOAuth.type === 'signup') {
+      navigationRef.current.navigate('SignUp', {
+        socialEmail: pendingOAuth.email,
+        socialName: pendingOAuth.username,
+        socialNickname: pendingOAuth.nickname,
+      });
+    } else {
+      AsyncStorage.setItem('accessToken', pendingOAuth.token);
+      navigationRef.current.navigate('Home');
+    }
 
-    const sub = Linking.addEventListener('url', (event) => {
-      if (!event.url) return;
-      if (!event.url.includes('oauth-redirect')) return;
-
-      const parsed = Linking.parse(event.url);
-      handleSocialCallback(parsed.queryParams);
-    });
-
-    return () => sub.remove();
-  }, []);
+    setPendingOAuth(null);
+  }, [pendingOAuth]);
 
   /* --------------------------------------------
-     🔥 3) 자동 로그인 체크 (OAuth 후 실행)
+     🔥 3) 자동 로그인
   ---------------------------------------------*/
   useEffect(() => {
-    if (!oAuthReady) return; // OAuth 끝난 뒤에 실행
+    if (!oAuthReady) return;
 
-    const checkLogin = async () => {
+    const check = async () => {
       const token = await AsyncStorage.getItem('accessToken');
-      if (!initialRoute) {
-        setInitialRoute(token ? 'Home' : 'Login');
-      }
+      setInitialRoute(token ? 'Home' : 'Login');
     };
 
-    checkLogin();
+    check();
   }, [oAuthReady]);
 
   /* --------------------------------------------
@@ -157,13 +120,11 @@ export default function App() {
     loadFonts();
   }, []);
 
-  /* --------------------------------------------
-     🔥 5) 모든 준비가 끝나기 전엔 렌더 X
-  ---------------------------------------------*/
   if (!oAuthReady || !fontsReady) return null;
 
   return (
-    <NavigationContainer ref={(ref) => (navigationRef = ref)}>
+    // ⭐ ref는 무조건 이렇게!
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator
         initialRouteName={initialRoute ?? 'Login'}
         screenOptions={{ headerShown: false }}
