@@ -1,4 +1,4 @@
-// Home.js
+// Home.js (새 디자인 적용 버전)
 import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
@@ -9,25 +9,29 @@ import {
   Animated,
   TouchableWithoutFeedback,
   useWindowDimensions,
+  StyleSheet,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
+import { Linking } from 'react-native';
 import AuthService from './AuthService';
 
 export default function Home({ navigation }) {
   const { width: SCREEN_WIDTH } = useWindowDimensions();
   const SIDEBAR_WIDTH = SCREEN_WIDTH * 0.7;
+
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const sidebarAnim = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
 
-  // ✅ 목표 목록 상태 추가
+  // ✅ 목표 / 월 합계 상태
   const [goals, setGoals] = useState([]);
   const [goalLoading, setGoalLoading] = useState(true);
   const [monthIncome, setMonthIncome] = useState(0);
   const [monthExpense, setMonthExpense] = useState(0);
   const [monthTotal, setMonthTotal] = useState(0);
+
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -48,20 +52,21 @@ export default function Home({ navigation }) {
       mounted = false;
     };
   }, []);
+
+  // 화면 다시 포커스될 때마다 새로고침
   useEffect(() => {
     const unsub = navigation.addListener('focus', async () => {
-      await loadGoals(); // 목표도 새로고침
-      await loadMonthTotal(); // 🔥 월별 합계도 새로고침
+      await loadGoals();
+      await loadMonthTotal();
     });
-
     return unsub;
-  }, []);
+  }, [navigation]);
+
+  // 화면 크기 변할 때 사이드바 위치 조정
   useEffect(() => {
-    // 화면 크기 변동 시 사이드바 위치 재조정
     sidebarAnim.setValue(sidebarVisible ? 0 : -SIDEBAR_WIDTH);
   }, [SIDEBAR_WIDTH]);
 
-  // ✅ 목표 불러오기 함수
   const loadGoals = async () => {
     try {
       const res = await AuthService.getGoals();
@@ -70,13 +75,13 @@ export default function Home({ navigation }) {
       console.error('목표 불러오기 실패:', err);
     }
   };
+
   const loadMonthTotal = async () => {
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth() + 1;
 
     const res = await AuthService.getMonthTotal(year, month);
-
     if (res.success) {
       setMonthIncome(res.income);
       setMonthExpense(res.expense);
@@ -88,14 +93,14 @@ export default function Home({ navigation }) {
     if (sidebarVisible) {
       Animated.timing(sidebarAnim, {
         toValue: -SIDEBAR_WIDTH,
-        duration: 300,
+        duration: 280,
         useNativeDriver: true,
       }).start(() => setSidebarVisible(false));
     } else {
       setSidebarVisible(true);
       Animated.timing(sidebarAnim, {
         toValue: 0,
-        duration: 300,
+        duration: 280,
         useNativeDriver: true,
       }).start();
     }
@@ -103,315 +108,262 @@ export default function Home({ navigation }) {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
+      <View style={styles.loadingWrap}>
+        <ActivityIndicator size="large" color="#F4F8F7" />
       </View>
     );
   }
 
-  // 내 폰 기준으로 헤더 쪽 (SmartLedger 아이콘) 이 안보여서 padding으로 내림.
+  const now = new Date();
+  const monthLabel = `${now.getMonth() + 1}월 가계 내역`;
+
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff', paddingTop: 40 }}>
-      {/* 상단 바 */}
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          paddingHorizontal: 16,
-          paddingVertical: 12,
-          borderBottomWidth: 1,
-          borderBottomColor: '#000',
-        }}
-      >
-        <Pressable onPress={toggleSidebar}>
-          <Ionicons name="menu" size={28} />
+    <View style={styles.screen}>
+      {/* 상단 헤더 */}
+      <View style={styles.header}>
+        <Pressable onPress={toggleSidebar} style={styles.headerIconBtn}>
+          <Ionicons name="menu" size={26} color="#F4F8F7" />
         </Pressable>
-        <Text style={{ fontSize: 20, fontWeight: '800' }}>Smart Ledger</Text>
-        <Pressable onPress={() => console.log('Alarm clicked')}>
-          <Ionicons name="notifications-outline" size={28} />
+
+        <Text style={styles.headerTitle}>Smart Ledger</Text>
+
+        <Pressable
+          onPress={() => console.log('Alarm clicked')}
+          style={styles.headerIconBtn}
+        >
+          <Ionicons name="notifications-outline" size={24} color="#F4F8F7" />
         </Pressable>
       </View>
 
-      <ScrollView style={{ flex: 1 }}>
-        {/* 메인 박스 */}
-        <View
-          style={{
-            backgroundColor: '#C4C4C4',
-            paddingVertical: 40,
-            paddingHorizontal: 24,
-            marginHorizontal: 16,
-            marginTop: 20,
-            borderRadius: 12,
-          }}
-        >
-          <Text style={{ fontSize: 20, fontWeight: '700', marginBottom: 8 }}>
-            스마트한 자동화
-          </Text>
-          <Text style={{ fontSize: 20, fontWeight: '700' }}>소비내역 관리</Text>
-        </View>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollInner}
+      >
+        {/* 11월 가계 내역 + 월 요약 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{monthLabel}</Text>
 
-        {/* 자동 결제 알리미 */}
-        <View style={{ marginTop: 20, marginHorizontal: 16 }}>
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 8,
-            }}
-          >
-            <Text style={{ fontSize: 16, fontWeight: '700' }}>
-              자동 결제 알리미
-            </Text>
-            <Text style={{ fontSize: 16, fontWeight: '700' }}>{'>'}</Text>
-          </View>
-          {['넷플릭스 자동 결제까지 D-2', '통신비 자동 결제까지 D-2'].map(
-            (item, idx) => (
-              <View
-                key={idx}
-                style={{
-                  backgroundColor: '#E5E5EA',
-                  paddingVertical: 6,
-                  paddingHorizontal: 12,
-                  borderRadius: 12,
-                  marginBottom: 6,
-                }}
-              >
-                <Text>{item}</Text>
+          {/* 수입 / 지출 카드 */}
+          <View style={styles.row}>
+            <View style={[styles.summaryCard, styles.incomeCard]}>
+              <View style={styles.summaryCardHeader}>
+                <Ionicons name="arrow-up" size={18} color="#FF736A" />
+                <Text style={styles.summaryLabel}>수입 내역</Text>
               </View>
-            )
-          )}
+              <Text style={styles.summaryAmount}>
+                +{monthIncome.toLocaleString()}원
+              </Text>
+            </View>
+
+            <View style={[styles.summaryCard, styles.expenseCard]}>
+              <View style={styles.summaryCardHeader}>
+                <Ionicons name="arrow-down" size={18} color="#4D9DFF" />
+                <Text style={styles.summaryLabel}>지출 내역</Text>
+              </View>
+              <Text style={styles.summaryAmount}>
+                -{monthExpense.toLocaleString()}원
+              </Text>
+            </View>
+          </View>
+
+          {/* 합계 버튼 */}
+          <Pressable
+            style={styles.totalButton}
+            onPress={() => navigation.navigate('History')}
+          >
+            <View style={styles.totalButtonLeft}>
+              <Ionicons name="logo-usd" size={16} color="#0D2D25" />
+              <Text style={styles.totalButtonLabel}>이번 달 합계</Text>
+            </View>
+            <Text style={styles.totalButtonAmount}>
+              {monthTotal.toLocaleString()}원
+            </Text>
+            <Ionicons
+              name="chevron-forward-outline"
+              size={18}
+              color="#0D2D25"
+            />
+          </Pressable>
         </View>
 
-        {/* 목표 */}
-        <View style={{ marginTop: 20, marginHorizontal: 16 }}>
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 8,
-            }}
-          >
-            <Text style={{ fontSize: 16, fontWeight: '700' }}>목표</Text>
+        {/* 뉴스 카드 (이미지 영역 + 텍스트) */}
+        <Pressable
+          style={styles.newsCard}
+          onPress={() => Linking.openURL('https://blog.hanabank.com/1338')}
+        >
+          <View style={styles.newsImageWrap}>
+            <Image
+              source={require('./assets/news_sample.png')}
+              style={styles.newsImage}
+              resizeMode="cover"
+            />
+          </View>
+
+          <View style={styles.newsTextWrap}>
+            <Text style={styles.newsTag}>데일리 뉴스</Text>
+            <Text style={styles.newsTitle} numberOfLines={2}>
+              부자들은 가계부 어떻게 쓸까? 숫자보다는 흐름이 중요!
+            </Text>
+            <Text style={styles.newsMeta} numberOfLines={1}>
+              by 하나은행 · 2019. 11. 4.
+            </Text>
+          </View>
+        </Pressable>
+
+        {/* 자동 결제 알림 */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>자동결제 알림</Text>
+            <Pressable onPress={() => navigation.navigate('AutoPay')}>
+              <Ionicons
+                name="chevron-forward-outline"
+                size={18}
+                color="#9FB8B3"
+              />
+            </Pressable>
+          </View>
+
+          {[
+            '넷플릭스 자동 결제',
+            '핸드폰 통신 요금 자동 결제',
+            '자취방 월세 자동 이체',
+            '월급 예정일',
+          ].map((label, idx) => {
+            const d =
+              idx === 0 || idx === 1 ? 'D-2' : idx === 2 ? 'D-3' : 'D-4';
+            return (
+              <View key={idx} style={styles.autoPayRow}>
+                <Text style={styles.autoPayLabel} numberOfLines={1}>
+                  {label}
+                </Text>
+                <View style={styles.autoPayDDayBadge}>
+                  <Text style={styles.autoPayDDayText}>{d}</Text>
+                </View>
+              </View>
+            );
+          })}
+        </View>
+
+        {/* 목표 현황 */}
+        <View style={[styles.section, { marginBottom: 70 }]}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={[styles.sectionTitle, { marginTop: -15 }]}>
+              목표 현황
+            </Text>
             <Pressable onPress={() => navigation.navigate('Motivation')}>
-              <Text style={{ fontSize: 16, fontWeight: '700' }}>{'>'}</Text>
+              <Ionicons
+                name="chevron-forward-outline"
+                size={18}
+                color="#9FB8B3"
+              />
             </Pressable>
           </View>
 
           {goalLoading ? (
-            <ActivityIndicator size="small" />
+            <ActivityIndicator size="small" color="#F4F8F7" />
           ) : goals.length === 0 ? (
-            <Text style={{ textAlign: 'center', color: '#777' }}>
-              등록된 목표가 없습니다.
-            </Text>
+            <Text style={styles.emptyText}>등록된 목표가 없습니다.</Text>
           ) : (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              pagingEnabled
-              snapToAlignment="start"
-              decelerationRate="fast"
+              contentContainerStyle={styles.goalScrollInner}
             >
               {goals.map((item) => (
-                <View
-                  key={item.goalId}
-                  style={{
-                    backgroundColor: '#E5E5EA',
-                    width: 180,
-                    padding: 12,
-                    marginRight: 12,
-                    borderRadius: 12,
-                  }}
-                >
-                  <Text style={{ fontWeight: '700', marginBottom: 4 }}>
-                    {item.title}
-                  </Text>
-                  <Text>{item.targetAmount.toLocaleString()}원</Text>
-                  <Text style={{ marginTop: 8 }}>
-                    달성률 : {Math.round(item.progressRate * 100)}%
-                  </Text>
-                  <Text style={{ fontSize: 12, color: '#555' }}>
-                    {item.deadline ? `${item.deadline} 목표` : ''}
-                  </Text>
+                <View key={item.goalId} style={styles.goalCard}>
+                  <View style={styles.goalThumb} />
+                  <View style={styles.goalInfo}>
+                    <Text style={styles.goalTitle} numberOfLines={1}>
+                      {item.title}
+                    </Text>
+                    <Text style={styles.goalAmount}>
+                      {item.targetAmount.toLocaleString()}원
+                    </Text>
+                    <Text style={styles.goalProgress}>
+                      달성률 {Math.round(item.progressRate * 100)}%
+                    </Text>
+                    {item.deadline ? (
+                      <Text style={styles.goalDeadline} numberOfLines={1}>
+                        {item.deadline}까지
+                      </Text>
+                    ) : null}
+                  </View>
                 </View>
               ))}
+
+              {/* + 버튼 카드 */}
+              <Pressable
+                style={styles.addGoalCard}
+                onPress={() => navigation.navigate('AddMotivation')}
+              >
+                <Ionicons name="add" size={32} color="#0D2D25" />
+              </Pressable>
             </ScrollView>
           )}
-        </View>
-
-        {/* 자산 / 내역 */}
-        <View style={{ marginTop: 20, marginHorizontal: 16, marginBottom: 80 }}>
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 8,
-            }}
-          >
-            <Text style={{ fontSize: 16, fontWeight: '700' }}>자산 / 내역</Text>
-            <Pressable onPress={() => navigation.navigate('History')}>
-              <Text style={{ fontSize: 16, fontWeight: '700' }}>{'>'}</Text>
-            </Pressable>
-          </View>
-          <View
-            style={{
-              flexDirection: 'row',
-              borderWidth: 1,
-              borderColor: '#000',
-              borderRadius: 12,
-              overflow: 'hidden',
-            }}
-          >
-            <View
-              style={{
-                flex: 1,
-                padding: 12,
-                borderRightWidth: 1,
-                borderColor: '#000',
-              }}
-            >
-              <Text
-                style={{
-                  color: 'blue',
-                  fontWeight: '700',
-                  textAlign: 'center',
-                }}
-              >
-                {monthIncome.toLocaleString()}
-              </Text>
-              <Text style={{ textAlign: 'center' }}>수입</Text>
-            </View>
-
-            <View
-              style={{
-                flex: 1,
-                padding: 12,
-                borderRightWidth: 1,
-                borderColor: '#000',
-              }}
-            >
-              <Text
-                style={{ color: 'red', fontWeight: '700', textAlign: 'center' }}
-              >
-                {monthExpense.toLocaleString()}
-              </Text>
-              <Text style={{ textAlign: 'center' }}>지출</Text>
-            </View>
-
-            <View style={{ flex: 1, padding: 12 }}>
-              <Text style={{ fontWeight: '700', textAlign: 'center' }}>
-                {monthTotal.toLocaleString()}
-              </Text>
-              <Text style={{ textAlign: 'center' }}>합계</Text>
-            </View>
-          </View>
         </View>
       </ScrollView>
 
       {/* 하단 탭바 */}
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-around',
-          alignItems: 'center',
-          height: 60,
-          borderTopWidth: 1,
-          borderTopColor: '#000',
-          backgroundColor: '#fff',
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-        }}
-      >
+      <View style={styles.tabBar}>
         <Pressable
           onPress={() => navigation.navigate('Home')}
-          style={{ alignItems: 'center' }}
+          style={styles.tabItem}
         >
-          <Ionicons name="home" size={24} />
-          <Text>홈</Text>
+          <Ionicons name="home" size={22} color="#F4F8F7" />
+          <Text style={styles.tabLabelActive}>메인</Text>
         </Pressable>
+
         <Pressable
           onPress={() => navigation.navigate('Motivation')}
-          style={{ alignItems: 'center' }}
+          style={styles.tabItem}
         >
-          <Ionicons name="heart" size={24} />
-          <Text>목표</Text>
+          <Ionicons name="heart" size={22} color="#9FB8B3" />
+          <Text style={styles.tabLabel}>목표</Text>
         </Pressable>
+
         <Pressable
           onPress={() => navigation.navigate('History')}
-          style={{ alignItems: 'center' }}
+          style={styles.tabItem}
         >
-          <Ionicons name="stats-chart" size={24} />
-          <Text>내역</Text>
+          <Ionicons name="stats-chart" size={22} color="#9FB8B3" />
+          <Text style={styles.tabLabel}>내역</Text>
         </Pressable>
+
         <Pressable
           onPress={() => navigation.navigate('Assets')}
-          style={{ alignItems: 'center' }}
+          style={styles.tabItem}
         >
-          <Ionicons name="logo-usd" size={24} />
-          <Text>자산</Text>
+          <Ionicons name="wallet-outline" size={22} color="#9FB8B3" />
+          <Text style={styles.tabLabel}>자산</Text>
         </Pressable>
       </View>
 
-      {/* 사이드바 */}
+      {/* 사이드바 오버레이 */}
       {sidebarVisible && (
         <TouchableWithoutFeedback onPress={toggleSidebar}>
-          <View
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(0,0,0,0.3)',
-            }}
-          />
+          <View style={styles.sidebarOverlay} />
         </TouchableWithoutFeedback>
       )}
 
+      {/* 사이드바 */}
       <Animated.View
-        style={{
-          position: 'absolute',
-          top: 0,
-          bottom: 0,
-          left: 0,
-          width: SIDEBAR_WIDTH,
-          backgroundColor: '#fff',
-          paddingTop: 40,
-          transform: [{ translateX: sidebarAnim }],
-          borderTopRightRadius: 20,
-          borderBottomRightRadius: 20,
-          overflow: 'hidden',
-          shadowColor: '#000',
-          shadowOffset: { width: 2, height: 0 },
-          shadowOpacity: 0.15,
-          shadowRadius: 4,
-          elevation: 5,
-        }}
+        style={[
+          styles.sidebar,
+          {
+            width: SIDEBAR_WIDTH,
+            transform: [{ translateX: sidebarAnim }],
+          },
+        ]}
       >
-        {/* 상단 제목 + 설정 아이콘 */}
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 20,
-            paddingHorizontal: 16,
-          }}
-        >
-          <Text style={{ fontSize: 18, fontWeight: '700' }}>
-            나의 Smart Ledger
-          </Text>
-          <Ionicons name="settings-outline" size={22} color="#000" />
+        {/* 상단 제목 + 설정 */}
+        <View style={styles.sidebarHeader}>
+          <Text style={styles.sidebarTitle}>나의 Smart Ledger</Text>
+          <Ionicons name="settings-outline" size={22} color="#E0F2EE" />
         </View>
 
         {/* 사용자 인사 + 마이페이지 버튼 */}
-        <View style={{ paddingHorizontal: 16, marginBottom: 20 }}>
-          <Text style={{ fontSize: 14, marginBottom: 8 }}>
+        <View style={styles.sidebarUserBox}>
+          <Text style={styles.sidebarWelcome}>
             {user?.nickname || '사용자'} 님 환영합니다.
           </Text>
           <Pressable
@@ -419,17 +371,9 @@ export default function Home({ navigation }) {
               toggleSidebar();
               navigation.navigate('MyPage');
             }}
-            style={{
-              backgroundColor: '#000',
-              paddingVertical: 6,
-              paddingHorizontal: 20,
-              borderRadius: 8,
-              alignSelf: 'flex-start',
-            }}
+            style={styles.sidebarMyPageBtn}
           >
-            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>
-              마이페이지
-            </Text>
+            <Text style={styles.sidebarMyPageText}>마이페이지</Text>
           </Pressable>
         </View>
 
@@ -448,45 +392,396 @@ export default function Home({ navigation }) {
               navigation.navigate(item.route);
             }}
           >
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                borderTopWidth: 1,
-                borderColor: '#000',
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-              }}
-            >
-              <Text style={{ fontSize: 14 }}>{item.label}</Text>
-              {/* ✅ label만 출력 */}
-              <Ionicons name="chevron-forward-outline" size={16} color="#000" />
+            <View style={styles.sidebarMenuRow}>
+              <Text style={styles.sidebarMenuText}>{item.label}</Text>
+              <Ionicons
+                name="chevron-forward-outline"
+                size={16}
+                color="#A5C2BC"
+              />
             </View>
           </Pressable>
         ))}
 
-        {/* 로그아웃 위 구분선 + 로그아웃 버튼 */}
-        <View
-          style={{
-            borderTopWidth: 1, // ✅ 검정색 구분선
-            borderColor: '#000',
-          }}
-        />
-
+        {/* 로그아웃 구분선 + 버튼 */}
+        <View style={styles.sidebarDivider} />
         <Pressable
           onPress={async () => {
             await AuthService.clearAuth();
             navigation.replace('Login');
           }}
-          style={{
-            paddingVertical: 16,
-            paddingHorizontal: 16,
-          }}
+          style={styles.logoutBtn}
         >
-          <Text style={{ color: 'red', fontWeight: '700' }}>로그아웃</Text>
+          <Text style={styles.logoutText}>로그아웃</Text>
         </Pressable>
       </Animated.View>
     </View>
   );
 }
+
+const BG = '#022326';
+const CARD = '#034040';
+const CARD_DARK = '#034040';
+const ACCENT = '#3AC08A';
+const TEXT_MAIN = '#BFBFBF';
+const TEXT_SUB = '#FFFFFF';
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: BG,
+    paddingTop: 40,
+  },
+  loadingWrap: {
+    flex: 1,
+    backgroundColor: BG,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  /******** Header ********/
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    paddingBottom: 10,
+  },
+  headerIconBtn: {
+    padding: 4,
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 22,
+    fontWeight: '800',
+    color: TEXT_MAIN,
+  },
+
+  /******** Scroll ********/
+  scroll: {
+    flex: 1,
+  },
+  scrollInner: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 12,
+  },
+
+  /******** Sections ********/
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 12,
+    marginTop: 1,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+
+  /******** Month summary ********/
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  summaryCard: {
+    flex: 1,
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: CARD,
+  },
+  incomeCard: {
+    marginRight: 8,
+  },
+  expenseCard: {
+    marginLeft: 8,
+  },
+  summaryCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  summaryLabel: {
+    marginLeft: 6,
+    fontSize: 13,
+    fontWeight: '600',
+    color: TEXT_SUB,
+  },
+  summaryAmount: {
+    marginTop: 6,
+    fontSize: 15,
+    fontWeight: '700',
+    color: TEXT_MAIN,
+  },
+  totalButton: {
+    marginTop: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: ACCENT,
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  totalButtonLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  totalButtonLabel: {
+    marginLeft: 6,
+    color: '#0D2D25',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  totalButtonAmount: {
+    marginRight: 8,
+    color: '#0D2D25',
+    fontWeight: '800',
+    fontSize: 15,
+  },
+
+  /******** News card ********/
+  newsCard: {
+    borderRadius: 18,
+    overflow: 'hidden',
+    backgroundColor: CARD_DARK,
+    marginBottom: 15,
+  },
+  newsImageWrap: {
+    height: 160,
+    width: '100%',
+    backgroundColor: '#25393A',
+    overflow: 'hidden',
+  },
+  newsImage: {
+    width: '100%',
+    height: '100%',
+  },
+  newsTextWrap: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  newsTag: {
+    fontSize: 11,
+    color: '#B9CBC7',
+    marginBottom: 6,
+  },
+  newsTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 8,
+  },
+  newsMeta: {
+    fontSize: 11,
+    color: '#8FA6A1',
+  },
+
+  /******** Auto pay ********/
+  autoPayRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: CARD,
+    borderRadius: 12,
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    marginBottom: 10,
+  },
+  autoPayLabel: {
+    flex: 1,
+    color: TEXT_MAIN,
+    fontSize: 13,
+  },
+  autoPayDDayBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#4C6561',
+  },
+  autoPayDDayText: {
+    color: TEXT_SUB,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+
+  emptyText: {
+    textAlign: 'center',
+    color: TEXT_SUB,
+    fontSize: 13,
+    marginTop: 8,
+  },
+
+  /******** Goals ********/
+  goalScrollInner: {
+    paddingVertical: 4,
+  },
+  goalCard: {
+    width: 220,
+    backgroundColor: CARD,
+    borderRadius: 18,
+    marginRight: 12,
+    overflow: 'hidden',
+  },
+  goalThumb: {
+    height: 90,
+    backgroundColor: '#224140',
+  },
+  goalInfo: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  goalTitle: {
+    color: TEXT_MAIN,
+    fontWeight: '700',
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  goalAmount: {
+    color: TEXT_SUB,
+    fontSize: 12,
+    marginBottom: 2,
+  },
+  goalProgress: {
+    color: '#D9F2E8',
+    fontSize: 12,
+    marginBottom: 2,
+  },
+  goalDeadline: {
+    color: '#90AAA5',
+    fontSize: 11,
+  },
+  addGoalCard: {
+    width: 72,
+    height: 72,
+    borderRadius: 999,
+    backgroundColor: ACCENT,
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginLeft: 4,
+  },
+
+  /******** Tab bar ********/
+  tabBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 68,
+    paddingBottom: 8,
+    paddingTop: 6,
+    backgroundColor: '#061D1D',
+    borderTopWidth: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-end',
+  },
+  tabItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabLabel: {
+    marginTop: 2,
+    fontSize: 11,
+    color: TEXT_SUB,
+  },
+  tabLabelActive: {
+    marginTop: 2,
+    fontSize: 11,
+    color: TEXT_MAIN,
+    fontWeight: '700',
+  },
+
+  /******** Sidebar ********/
+  sidebarOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  sidebar: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: '#022326',
+    paddingTop: 44,
+    borderTopRightRadius: 24,
+    borderBottomRightRadius: 24,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 3, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  sidebarHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    marginBottom: 18,
+  },
+  sidebarTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: TEXT_MAIN,
+  },
+  sidebarUserBox: {
+    paddingHorizontal: 18,
+    marginBottom: 18,
+  },
+  sidebarWelcome: {
+    fontSize: 14,
+    color: TEXT_SUB,
+    marginBottom: 10,
+  },
+  sidebarMyPageBtn: {
+    backgroundColor: ACCENT,
+    paddingVertical: 6,
+    paddingHorizontal: 20,
+    borderRadius: 999,
+    alignSelf: 'flex-start',
+  },
+  sidebarMyPageText: {
+    color: '#0D2D25',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  sidebarMenuRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    borderTopWidth: 0.6,
+    borderColor: '#02735E',
+  },
+  sidebarMenuText: {
+    color: TEXT_MAIN,
+    fontSize: 14,
+  },
+  sidebarDivider: {
+    borderTopWidth: 0.7,
+    borderColor: '#02735E',
+    marginTop: 10,
+  },
+  logoutBtn: {
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+  },
+  logoutText: {
+    color: '#FF6B6B',
+    fontWeight: '700',
+  },
+});
