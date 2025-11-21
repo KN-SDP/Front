@@ -23,9 +23,9 @@ import FindIdResult from './FindIdResult';
 
 const Stack = createNativeStackNavigator();
 
-/* ----------------------------------------------------------
-   🔥 1) 소셜 콜백 처리 함수 (모바일/웹 공용)
------------------------------------------------------------*/
+/* --------------------------------------------
+   🔥 소셜 로그인 콜백 처리 (공통)
+---------------------------------------------*/
 const handleSocialCallback = async (params) => {
   if (!params) return;
 
@@ -40,12 +40,14 @@ const handleSocialCallback = async (params) => {
   if (!token) return;
 
   if (isNewUser === 'true') {
+    // ➜ 신규 유저 → 회원가입 이동 + initialRoute 변경
     navigationRef?.navigate('SignUp', {
       socialEmail: email,
       socialName: username,
       socialNickname: nickname,
     });
   } else {
+    // ➜ 기존 유저 → 토큰 저장 후 홈
     await AsyncStorage.setItem('accessToken', token);
     navigationRef?.navigate('Home');
   }
@@ -56,9 +58,9 @@ export default function App() {
   const [fontsReady, setFontsReady] = useState(false);
   const [oAuthReady, setOAuthReady] = useState(false);
 
-  /* ----------------------------------------------------------
-     🔥 3) 웹 전용 URL 파싱 처리
-  -----------------------------------------------------------*/
+  /* --------------------------------------------
+     🔥 1) 웹 전용 OAuth 파싱
+  ---------------------------------------------*/
   useEffect(() => {
     if (Platform.OS !== 'web') {
       setOAuthReady(true);
@@ -74,9 +76,18 @@ export default function App() {
     const nickname = params.get('nickname');
 
     if (token) {
-      console.log('🔥 웹 OAuth 감지:', { token, isNewUser });
+      console.log('🔥 웹 OAuth 감지:', {
+        token,
+        isNewUser,
+        email,
+        username,
+        nickname,
+      });
 
+      // 🔥 initialRoute를 먼저 강제로 잡아준다
       if (isNewUser === 'true') {
+        setInitialRoute('SignUp');
+
         navigationRef?.navigate('SignUp', {
           socialEmail: email,
           socialName: username,
@@ -84,6 +95,7 @@ export default function App() {
         });
       } else {
         AsyncStorage.setItem('accessToken', token);
+        setInitialRoute('Home');
         navigationRef?.navigate('Home');
       }
     }
@@ -91,9 +103,9 @@ export default function App() {
     setOAuthReady(true);
   }, []);
 
-  /* ----------------------------------------------------------
-     🔥 2) 모바일 Linking 처리
-  -----------------------------------------------------------*/
+  /* --------------------------------------------
+     🔥 2) 모바일 Linking (기존 유지)
+  ---------------------------------------------*/
   useEffect(() => {
     if (Platform.OS === 'web') return;
 
@@ -116,20 +128,25 @@ export default function App() {
     return () => sub.remove();
   }, []);
 
-  /* ----------------------------------------------------------
-     🔥 4) 자동 로그인 체크
-  -----------------------------------------------------------*/
+  /* --------------------------------------------
+     🔥 3) 자동 로그인 체크 (OAuth 후 실행)
+  ---------------------------------------------*/
   useEffect(() => {
+    if (!oAuthReady) return; // OAuth 끝난 뒤에 실행
+
     const checkLogin = async () => {
       const token = await AsyncStorage.getItem('accessToken');
-      setInitialRoute(token ? 'Home' : 'Login');
+      if (!initialRoute) {
+        setInitialRoute(token ? 'Home' : 'Login');
+      }
     };
-    checkLogin();
-  }, []);
 
-  /* ----------------------------------------------------------
-     🔥 5) 폰트 로딩
-  -----------------------------------------------------------*/
+    checkLogin();
+  }, [oAuthReady]);
+
+  /* --------------------------------------------
+     🔥 4) 폰트 로딩
+  ---------------------------------------------*/
   useEffect(() => {
     async function loadFonts() {
       await Font.loadAsync({
@@ -144,9 +161,9 @@ export default function App() {
     loadFonts();
   }, []);
 
-  /* ----------------------------------------------------------
-     🔥 6) Router는 모든 준비가 끝난 뒤에만 렌더링
-  -----------------------------------------------------------*/
+  /* --------------------------------------------
+     🔥 5) 모든 준비가 끝나기 전엔 렌더 X
+  ---------------------------------------------*/
   if (!oAuthReady || !fontsReady || !initialRoute) return null;
 
   return (
