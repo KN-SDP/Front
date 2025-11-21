@@ -71,7 +71,10 @@ function toOnlyDigitsPhone(input = '') {
 // COMPONENT
 // ------------------------------------------------------
 export default function SignUp({ navigation, route }) {
-  const { socialEmail, socialName, socialNickname } = route.params || {};
+  const params = route?.params || {};
+  const socialEmail = params.socialEmail;
+  const socialName = params.socialName;
+  const socialNickname = params.socialNickname;
   console.log('SignUp에서 받은 social params:', {
     socialEmail,
     socialName,

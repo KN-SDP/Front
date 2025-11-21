@@ -1,4 +1,4 @@
-export let navigationRef = null;
+export const navigationRef = React.createRef();
 
 import * as Font from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
@@ -65,17 +65,17 @@ export default function App() {
      2) NavigationContainer 생성 후 pendingOAuth 실행
   -----------------------------------------------------------*/
   useEffect(() => {
-    if (!pendingOAuth || !navigationRef) return;
+    if (!pendingOAuth || !navigationRef.current) return;
 
     if (pendingOAuth.type === 'signup') {
-      navigationRef.navigate('SignUp', {
+      navigationRef.current.navigate('SignUp', {
         socialEmail: pendingOAuth.email,
         socialName: pendingOAuth.username,
         socialNickname: pendingOAuth.nickname,
       });
     } else {
       AsyncStorage.setItem('accessToken', pendingOAuth.token);
-      navigationRef.navigate('Home');
+      navigationRef.current.navigate('Home');
     }
 
     setPendingOAuth(null); // 한 번 실행 후 제거
@@ -153,7 +153,7 @@ export default function App() {
   if (!initialRoute || !fontsReady) return null;
 
   return (
-    <NavigationContainer ref={(ref) => (navigationRef = ref)}>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator
         initialRouteName={initialRoute}
         screenOptions={{ headerShown: false }}
