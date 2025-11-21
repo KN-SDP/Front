@@ -1,8 +1,6 @@
-export const navigationRef = React.createRef();
-
 import * as Font from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -25,14 +23,14 @@ import FindIdResult from './FindIdResult';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
+  const navigationRef = useRef(null); // 🔥 수정 1: export 제거 + useRef 사용
+
   const [initialRoute, setInitialRoute] = useState(null);
   const [fontsReady, setFontsReady] = useState(false);
-
-  // ⭐ navigate를 즉시 하지 않고 여기 저장함
   const [pendingOAuth, setPendingOAuth] = useState(null);
 
   /* ----------------------------------------------------------
-     1) 웹 OAuth 파싱 (NavigationContainer 렌더 전에 실행됨)
+     1) 웹 OAuth 파싱
   -----------------------------------------------------------*/
   useEffect(() => {
     if (Platform.OS !== 'web') return;
@@ -62,7 +60,7 @@ export default function App() {
   }, []);
 
   /* ----------------------------------------------------------
-     2) NavigationContainer 생성 후 pendingOAuth 실행
+     2) NavigationContainer 이후 pendingOAuth 처리
   -----------------------------------------------------------*/
   useEffect(() => {
     if (!pendingOAuth || !navigationRef.current) return;
@@ -78,8 +76,8 @@ export default function App() {
       navigationRef.current.navigate('Home');
     }
 
-    setPendingOAuth(null); // 한 번 실행 후 제거
-  }, [pendingOAuth, navigationRef]);
+    setPendingOAuth(null);
+  }, [pendingOAuth]); // 🔥 수정 2: navigationRef 삭제
 
   /* ----------------------------------------------------------
      3) 모바일 OAuth 처리
@@ -111,14 +109,14 @@ export default function App() {
     if (!token) return;
 
     if (isNewUser === 'true') {
-      navigationRef.navigate('SignUp', {
+      navigationRef.current?.navigate('SignUp', {
         socialEmail: params.email,
         socialName: params.username,
         socialNickname: params.nickname,
       });
     } else {
       AsyncStorage.setItem('accessToken', token);
-      navigationRef.navigate('Home');
+      navigationRef.current?.navigate('Home');
     }
   };
 
