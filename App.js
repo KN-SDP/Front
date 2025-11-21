@@ -7,7 +7,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform, Linking } from 'react-native';
-import jwt_decode from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 
 import Login from './Login';
 import SignUp from './SignUp';
@@ -75,7 +75,7 @@ export default function App() {
     if (token) {
       console.log('웹 OAuth 감지됨 (token만 수신):', token);
 
-      const decoded = jwt_decode(token);
+      const decoded = jwtDecode(token);
       console.log('디코딩 결과:', decoded);
 
       const email = decoded.email;
