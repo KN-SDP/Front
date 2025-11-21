@@ -7,6 +7,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform, Linking } from 'react-native';
+import jwt_decode from 'jwt-decode';
 
 import Login from './Login';
 import SignUp from './SignUp';
@@ -68,26 +69,20 @@ export default function App() {
     }
 
     const params = new URLSearchParams(window.location.search);
-
     const token = params.get('token');
     const isNewUser = params.get('isNewUser');
-    const email = params.get('email');
-    const username = params.get('username');
-    const nickname = params.get('nickname');
 
     if (token) {
-      console.log('🔥 웹 OAuth 감지:', {
-        token,
-        isNewUser,
-        email,
-        username,
-        nickname,
-      });
+      console.log('웹 OAuth 감지됨 (token만 수신):', token);
 
-      // 🔥 initialRoute를 먼저 강제로 잡아준다
+      const decoded = jwt_decode(token);
+      console.log('디코딩 결과:', decoded);
+
+      const email = decoded.email;
+      const username = decoded.username;
+      const nickname = decoded.nickname;
+
       if (isNewUser === 'true') {
-        setInitialRoute('SignUp');
-
         navigationRef?.navigate('SignUp', {
           socialEmail: email,
           socialName: username,
@@ -95,7 +90,6 @@ export default function App() {
         });
       } else {
         AsyncStorage.setItem('accessToken', token);
-        setInitialRoute('Home');
         navigationRef?.navigate('Home');
       }
     }
