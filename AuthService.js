@@ -1,7 +1,7 @@
 // AuthService.js
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import jwtDecode from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 import { Platform } from 'react-native';
 
 let BASE_URL;
