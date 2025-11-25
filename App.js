@@ -19,7 +19,7 @@ import MyPage from './MyPage';
 import History from './History';
 import HistoryDetail from './HistoryDetail';
 import FindIdResult from './FindIdResult';
-
+import Management from './Management';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -141,6 +141,7 @@ export default function App() {
         <Stack.Screen name="History" component={History} />
         <Stack.Screen name="HistoryDetail" component={HistoryDetail} />
         <Stack.Screen name="FindIdResult" component={FindIdResult} />
+        <Stack.Screen name="Management" component={Management} />
       </Stack.Navigator>
     </NavigationContainer>
   );

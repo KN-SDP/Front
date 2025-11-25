@@ -1,25 +1,9 @@
-// MyPage.js (Smart Ledger 스타일 전체 리디자인)
-import React, { useState, useEffect } from 'react';
+// Management.js (계정 관리)
+import React from 'react';
 import { View, Text, Pressable, StyleSheet, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import AuthService from './AuthService';
 
-export default function MyPage({ navigation }) {
-  const [nickname, setNickname] = useState('');
-  const [email, setEmail] = useState('');
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const user = await AuthService.getCurrentUser();
-        setNickname(user?.nickname || '');
-        setEmail(user?.email || '');
-      } catch (e) {
-        console.log('유저 정보 불러오기 실패:', e);
-      }
-    })();
-  }, []);
-
+export default function Management({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       {/* 상단 헤더 */}
@@ -27,54 +11,30 @@ export default function MyPage({ navigation }) {
         <Pressable onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={26} color="#BFBFBF" />
         </Pressable>
-        <Text style={styles.headerTitle}>마이페이지</Text>
+        <Text style={styles.headerTitle}>계정 관리</Text>
         <View style={{ width: 26 }} />
       </View>
 
-      {/* 사용자 프로필 카드 */}
-      <View style={styles.profileCard}>
-        <Ionicons name="person-circle-outline" size={72} color="#FFFFFF" />
-        <Text style={styles.nickname}>{nickname}</Text>
-        <Text style={styles.email}>{email}</Text>
-      </View>
-
-      {/* 메뉴 리스트 */}
+      {/* 목록 그룹 */}
       <View style={styles.menuGroup}>
-        <Pressable
-          style={styles.menuRow}
-          onPress={() => navigation.navigate('Management')}
-        >
-          <Text style={styles.menuText}>계정 관리</Text>
+        <Pressable style={styles.menuRow}>
+          <Text style={styles.menuText}>닉네임 수정</Text>
           <Ionicons name="chevron-forward-outline" size={18} color="#8FA6A1" />
         </Pressable>
 
         <View style={styles.separator} />
 
         <Pressable style={styles.menuRow}>
-          <Text style={styles.menuText}>알림 설정</Text>
+          <Text style={styles.menuText}>비밀번호 변경</Text>
           <Ionicons name="chevron-forward-outline" size={18} color="#8FA6A1" />
         </Pressable>
 
         <View style={styles.separator} />
 
-        <Pressable
-          style={styles.menuRow}
-          onPress={() => navigation.navigate('Login')}
-        >
-          <Text style={[styles.menuText, { color: '#FF6E6E' }]}>로그아웃</Text>
-          <Ionicons name="log-out-outline" size={18} color="#FF6E6E" />
+        <Pressable style={styles.menuRow}>
+          <Text style={[styles.menuText, { color: '#FF6E6E' }]}>회원 탈퇴</Text>
+          <Ionicons name="close-circle-outline" size={18} color="#FF6E6E" />
         </Pressable>
-      </View>
-
-      {/* 앱 정보 */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>현재 버전 정보</Text>
-        <Text style={styles.sectionValue}>0.0.1v</Text>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>앱 정보</Text>
-        <Text style={styles.sectionValue}>가계부 관리 APP</Text>
       </View>
 
       {/* 하단 메뉴 */}
@@ -120,6 +80,7 @@ const TEXT_SUB = '#BFBFBF';
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
 
+  /******** Header ********/
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -136,28 +97,13 @@ const styles = StyleSheet.create({
     color: TEXT_MAIN,
   },
 
-  profileCard: {
-    marginVertical: 26,
-    alignItems: 'center',
-  },
-  nickname: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: TEXT_MAIN,
-    marginTop: 8,
-  },
-  email: {
-    fontSize: 13,
-    color: TEXT_SUB,
-    marginTop: 2,
-  },
-
+  /******** Menu Group ********/
   menuGroup: {
     marginTop: 10,
     marginHorizontal: 20,
     backgroundColor: CARD,
     borderRadius: 16,
-    paddingVertical: 6,
+    paddingVertical: 8,
   },
   menuRow: {
     flexDirection: 'row',
@@ -176,10 +122,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#1C3D3A',
     marginHorizontal: 14,
   },
-
-  section: { paddingHorizontal: 20, marginTop: 20 },
-  sectionTitle: { color: TEXT_MAIN, fontSize: 14, marginBottom: 6 },
-  sectionValue: { color: TEXT_SUB, fontSize: 13 },
 
   sidebarBottomMenu: {
     position: 'absolute',
