@@ -15,16 +15,17 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Linking } from 'react-native';
 import AuthService from './AuthService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Home({ navigation }) {
   const { width: SCREEN_WIDTH } = useWindowDimensions();
-  const SIDEBAR_WIDTH = SCREEN_WIDTH * 0.7;
+  const SIDEBAR_WIDTH = SCREEN_WIDTH;
 
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const sidebarAnim = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
-
+  const [sidebarTab, setSidebarTab] = useState('가계부');
   // ✅ 목표 / 월 합계 상태
   const [goals, setGoals] = useState([]);
   const [goalLoading, setGoalLoading] = useState(true);
@@ -345,75 +346,198 @@ export default function Home({ navigation }) {
         </TouchableWithoutFeedback>
       )}
 
-      {/* 사이드바 */}
       <Animated.View
         style={[
-          styles.sidebar,
-          {
-            width: SIDEBAR_WIDTH,
-            transform: [{ translateX: sidebarAnim }],
-          },
+          styles.sidebarNew,
+          { width: SIDEBAR_WIDTH, transform: [{ translateX: sidebarAnim }] },
         ]}
       >
-        {/* 상단 제목 + 설정 */}
-        <View style={styles.sidebarHeader}>
-          <Text style={styles.sidebarTitle}>나의 Smart Ledger</Text>
-          <Ionicons name="settings-outline" size={22} color="#E0F2EE" />
+        {/* 상단 X + 타이틀 */}
+        <View style={styles.sidebarTopRow}>
+          <Pressable onPress={toggleSidebar}>
+            <Ionicons name="close" size={28} color="#FFFFFF" />
+          </Pressable>
+          <Text style={styles.sidebarTitleNew}>나의 Smart Ledger</Text>
+          <View style={{ width: 28 }} />
         </View>
 
-        {/* 사용자 인사 + 마이페이지 버튼 */}
-        <View style={styles.sidebarUserBox}>
-          <Text style={styles.sidebarWelcome}>
-            {user?.nickname || '사용자'} 님 환영합니다.
+        {/* 환영 메시지 */}
+        <View style={styles.sidebarWelcomeBox}>
+          <Text style={styles.sidebarWelcomeText}>
+            {user?.nickname || '사용자'}님 환영합니다.
           </Text>
-          <Pressable
-            onPress={() => {
-              toggleSidebar();
-              navigation.navigate('MyPage');
-            }}
-            style={styles.sidebarMyPageBtn}
-          >
-            <Text style={styles.sidebarMyPageText}>마이페이지</Text>
-          </Pressable>
         </View>
 
-        {/* 메뉴 목록 */}
-        {[
-          { label: '자동결제 알리미', route: 'AutoPay' },
-          { label: '동기부여', route: 'Motivation' },
-          { label: '자산 / 내역', route: 'History' },
-          { label: '예산 관리', route: 'Budget' },
-          { label: '자동 지출 설정 / 월급 설정', route: 'Setting' },
-        ].map((item, idx) => (
+        {/* 카테고리 탭 */}
+        <View style={styles.sidebarTabs}>
+          {['가계부', '목표', '자산', '기타'].map((tab, idx) => (
+            <Pressable
+              key={idx}
+              style={[
+                styles.sidebarTabItem,
+                sidebarTab === tab && styles.sidebarTabActive,
+              ]}
+              onPress={() => setSidebarTab(tab)}
+            >
+              <Text
+                style={[
+                  styles.sidebarTabText,
+                  sidebarTab === tab && styles.sidebarTabTextActive,
+                ]}
+              >
+                {tab}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {/* 카테고리별 컨텐츠 */}
+        <ScrollView style={{ flex: 1 }}>
+          {sidebarTab === '가계부' && (
+            <View style={styles.sidebarGroup}>
+              {[
+                { label: '월별 가계부 보기', route: 'History' },
+                { label: '일별 가계부 보기', route: 'History' },
+                { label: '가계부 추가하기', route: 'HistoryDetail' },
+                {
+                  label: '카테고리별 가계부 조회하기',
+                  route: 'CategoryLedger',
+                },
+              ].map((item, idx) => (
+                <Pressable
+                  key={idx}
+                  style={styles.sidebarRow}
+                  onPress={() => {
+                    toggleSidebar();
+                    navigation.navigate(item.route);
+                  }}
+                >
+                  <Text style={styles.sidebarRowBullet}>•</Text>
+                  <Text style={styles.sidebarRowText}>{item.label}</Text>
+                  <Ionicons
+                    name="chevron-forward-outline"
+                    size={16}
+                    color="#BFBFBF"
+                  />
+                </Pressable>
+              ))}
+            </View>
+          )}
+
+          {sidebarTab === '목표' && (
+            <View style={styles.sidebarGroup}>
+              <Pressable
+                style={styles.sidebarRow}
+                onPress={() => {
+                  toggleSidebar();
+                  navigation.navigate('Motivation');
+                }}
+              >
+                <Text style={styles.sidebarRowBullet}>•</Text>
+                <Text style={styles.sidebarRowText}>나의 목표 보기</Text>
+                <Ionicons
+                  name="chevron-forward-outline"
+                  size={16}
+                  color="#BFBFBF"
+                />
+              </Pressable>
+
+              <Pressable
+                style={styles.sidebarRow}
+                onPress={() => {
+                  toggleSidebar();
+                  navigation.navigate('AddMotivation');
+                }}
+              >
+                <Text style={styles.sidebarRowBullet}>•</Text>
+                <Text style={styles.sidebarRowText}>나의 목표 추가하기</Text>
+                <Ionicons
+                  name="chevron-forward-outline"
+                  size={16}
+                  color="#BFBFBF"
+                />
+              </Pressable>
+            </View>
+          )}
+
+          {/* 자산 */}
+          {sidebarTab === '자산' && (
+            <View style={styles.sidebarGroup}>
+              {[
+                '총자산 조회하기',
+                '현금 자산 추가/수정',
+                '은행 자산 추가/수정',
+                '코인 자산 추가/수정',
+                '주식 자산 추가/수정',
+                '자산 차트 분석도 보기',
+              ].map((label, idx) => (
+                <View key={idx} style={styles.sidebarRow}>
+                  <Text style={styles.sidebarRowBullet}>•</Text>
+                  <Text style={styles.sidebarRowText}>{label}</Text>
+                  <Ionicons
+                    name="chevron-forward-outline"
+                    size={16}
+                    color="#BFBFBF"
+                  />
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* 기타 */}
+          {sidebarTab === '기타' && (
+            <View style={styles.sidebarGroup}>
+              {[
+                '자동 결제 설정',
+                '자동 월급 설정',
+                '카테고리별 한도 설정',
+                '기간별 사용내역 조회',
+              ].map((label, idx) => (
+                <View key={idx} style={styles.sidebarRow}>
+                  <Text style={styles.sidebarRowBullet}>•</Text>
+                  <Text style={styles.sidebarRowText}>{label}</Text>
+                  <Ionicons
+                    name="chevron-forward-outline"
+                    size={16}
+                    color="#BFBFBF"
+                  />
+                </View>
+              ))}
+            </View>
+          )}
+        </ScrollView>
+
+        {/* 하단 메뉴 */}
+        <View style={styles.sidebarBottomMenu}>
           <Pressable
-            key={idx}
+            style={styles.bottomItem}
             onPress={() => {
-              toggleSidebar();
-              navigation.navigate(item.route);
+              AsyncStorage.removeItem('accessToken');
+              navigation.navigate('Login');
             }}
           >
-            <View style={styles.sidebarMenuRow}>
-              <Text style={styles.sidebarMenuText}>{item.label}</Text>
-              <Ionicons
-                name="chevron-forward-outline"
-                size={16}
-                color="#A5C2BC"
-              />
-            </View>
+            <Ionicons name="log-out-outline" size={22} color="#FFFFFF" />
+            <Text style={styles.bottomItemText}>로그아웃</Text>
           </Pressable>
-        ))}
 
-        {/* 로그아웃 구분선 + 버튼 */}
-        <View style={styles.sidebarDivider} />
-        <Pressable
-          onPress={async () => {
-            await AuthService.clearAuth();
-            navigation.replace('Login');
-          }}
-          style={styles.logoutBtn}
-        >
-          <Text style={styles.logoutText}>로그아웃</Text>
-        </Pressable>
+          <Pressable style={styles.bottomItem}>
+            <Ionicons name="headset-outline" size={22} color="#FFFFFF" />
+            <Text style={styles.bottomItemText}>문의</Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.bottomItem}
+            onPress={() => navigation.navigate('MyPage')}
+          >
+            <Ionicons name="person-outline" size={22} color="#FFFFFF" />
+            <Text style={styles.bottomItemText}>마이페이지</Text>
+          </Pressable>
+
+          <Pressable style={styles.bottomItem}>
+            <Ionicons name="settings-outline" size={22} color="#FFFFFF" />
+            <Text style={styles.bottomItemText}>설정</Text>
+          </Pressable>
+        </View>
       </Animated.View>
     </View>
   );
@@ -709,79 +833,107 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.45)',
   },
-  sidebar: {
+  sidebarNew: {
     position: 'absolute',
     top: 0,
     bottom: 0,
     left: 0,
     backgroundColor: '#022326',
-    paddingTop: 44,
-    borderTopRightRadius: 24,
-    borderBottomRightRadius: 24,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 3, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    paddingTop: 50,
+    paddingHorizontal: 18,
   },
-  sidebarHeader: {
+
+  sidebarTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 18,
-    marginBottom: 18,
+    marginBottom: 20,
   },
-  sidebarTitle: {
+
+  sidebarTitleNew: {
     fontSize: 18,
     fontWeight: '700',
-    color: TEXT_MAIN,
+    color: '#FFFFFF',
   },
-  sidebarUserBox: {
-    paddingHorizontal: 18,
-    marginBottom: 18,
-  },
-  sidebarWelcome: {
-    fontSize: 14,
-    color: TEXT_SUB,
-    marginBottom: 10,
-  },
-  sidebarMyPageBtn: {
-    backgroundColor: ACCENT,
+
+  sidebarWelcomeBox: {
+    backgroundColor: '#035951',
     paddingVertical: 6,
-    paddingHorizontal: 20,
-    borderRadius: 999,
-    alignSelf: 'flex-start',
+    paddingHorizontal: 141,
+    borderRadius: 8,
+    marginBottom: 20,
   },
-  sidebarMyPageText: {
-    color: '#0D2D25',
-    fontWeight: '700',
+
+  sidebarWelcomeText: {
+    color: '#FFFFFF',
     fontSize: 13,
+    fontWeight: '600',
   },
-  sidebarMenuRow: {
+
+  sidebarTabs: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    borderTopWidth: 0.6,
-    borderColor: '#02735E',
+    justifyContent: 'space-around',
+    borderBottomWidth: 0.8,
+    borderColor: '#2D4D4A',
+    paddingBottom: 6,
   },
-  sidebarMenuText: {
-    color: TEXT_MAIN,
+
+  sidebarTabItem: {
+    paddingVertical: 6,
+  },
+
+  sidebarTabText: {
+    color: '#7DA09B',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
+  sidebarTabActive: {
+    borderBottomWidth: 2,
+    borderColor: '#3AC08A',
+  },
+
+  sidebarTabTextActive: {
+    color: '#3AC08A',
+  },
+
+  sidebarGroup: {
+    paddingVertical: 12,
+  },
+
+  sidebarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+
+  sidebarRowBullet: {
+    fontSize: 16,
+    color: '#BFBFBF',
+    marginRight: 8,
+  },
+
+  sidebarRowText: {
+    flex: 1,
+    color: '#BFBFBF',
     fontSize: 14,
   },
-  sidebarDivider: {
+
+  sidebarBottomMenu: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 18,
     borderTopWidth: 0.7,
-    borderColor: '#02735E',
-    marginTop: 10,
+    borderColor: '#035951',
   },
-  logoutBtn: {
-    paddingHorizontal: 18,
-    paddingVertical: 16,
+
+  bottomItem: {
+    alignItems: 'center',
   },
-  logoutText: {
-    color: '#FF6B6B',
-    fontWeight: '700',
+
+  bottomItemText: {
+    marginTop: 4,
+    fontSize: 10,
+    color: '#BFBFBF',
   },
 });
