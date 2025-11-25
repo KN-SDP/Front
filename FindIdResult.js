@@ -47,7 +47,7 @@ export default function FindIdResult({ navigation, route }) {
         </Text>
         <Pressable
           onPress={() =>
-            navigationRef.reset({
+            navigation.reset({
               index: 0,
               routes: [{ name: 'Login' }],
             })
@@ -64,7 +64,7 @@ export default function FindIdResult({ navigation, route }) {
           flex: 1,
           justifyContent: 'center',
           alignItems: 'center',
-          marginTop: -60, // 사진처럼 약간 위로 올림
+          marginTop: -60,
         }}
       >
         <Text

@@ -88,6 +88,7 @@ export default function SignUp({ navigation, route }) {
   const [nickname, setNickname] = useState('');
   const [telDigits, setTelDigits] = useState('');
   const [birthDigits, setBirthDigits] = useState('');
+  const [emailCheck, setEmailCheck] = useState(null);
 
   // 🔥 소셜 로그인 자동기입
   useEffect(() => {
@@ -130,18 +131,24 @@ export default function SignUp({ navigation, route }) {
     syncAllFromItems(agree1, agree2, n);
   };
 
-  // 중복 체크
   const handleCheckEmail = async () => {
     if (!email.trim()) {
-      showAlert('알림', '이메일을 입력해주세요.');
+      setEmailCheck(null);
       return;
     }
+
     try {
       const res = await AuthService.checkDuplicatedEmail(email);
-      if (res.success) showAlert('확인', '사용 가능한 이메일입니다!');
-      else showAlert('중복', '이미 존재하는 이메일입니다.');
+
+      if (res.available === true) {
+        setEmailCheck(true);
+      } else if (res.available === false) {
+        setEmailCheck(false);
+      } else {
+        setEmailCheck(null);
+      }
     } catch (e) {
-      showAlert('오류', '중복 확인 중 문제가 발생했습니다.');
+      setEmailCheck(null);
     }
   };
 
@@ -248,7 +255,10 @@ export default function SignUp({ navigation, route }) {
               placeholder="ex)kangnam@naver.com"
               placeholderTextColor={PH}
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => {
+                setEmail(text);
+                setEmailCheck(null); // 👈 이메일 입력 바뀌면 결과 초기화
+              }}
               style={styles.input}
             />
 
@@ -256,6 +266,14 @@ export default function SignUp({ navigation, route }) {
               <Text style={styles.checkBtnText}>중복확인</Text>
             </Pressable>
           </View>
+
+          {emailCheck === true && (
+            <Text style={styles.emailOk}>사용 가능한 이메일입니다.</Text>
+          )}
+
+          {emailCheck === false && (
+            <Text style={styles.emailError}>이미 존재하는 이메일입니다.</Text>
+          )}
 
           {/* 이름 */}
           <Text style={styles.label}>이름</Text>
@@ -281,6 +299,18 @@ export default function SignUp({ navigation, route }) {
               style={styles.input}
             />
           </View>
+
+          {pw.length > 0 && pw.length < 8 && (
+            <Text style={styles.pwErrorText}>
+              비밀번호는 최소 8자 이상이어야 합니다.
+            </Text>
+          )}
+
+          {pw.length > 20 && (
+            <Text style={styles.pwErrorText}>
+              비밀번호는 최대 20자 이하이어야 합니다.
+            </Text>
+          )}
 
           {/* 비밀번호 확인 */}
           <Text style={styles.label}>비밀번호 확인</Text>
@@ -527,5 +557,17 @@ const styles = {
     color: '#BFBFBF',
     fontSize: 13,
     fontWeight: '500',
+  },
+  emailError: {
+    marginTop: 4,
+    color: '#FF6B6B',
+    fontSize: 12,
+    marginLeft: 4,
+  },
+  emailOk: {
+    marginTop: 4,
+    color: '#7ED957',
+    fontSize: 12,
+    marginLeft: 4,
   },
 };
