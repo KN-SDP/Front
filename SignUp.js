@@ -75,11 +75,6 @@ export default function SignUp({ navigation, route }) {
   const socialEmail = params.socialEmail;
   const socialName = params.socialName;
   const socialNickname = params.socialNickname;
-  console.log('SignUp에서 받은 social params:', {
-    socialEmail,
-    socialName,
-    socialNickname,
-  });
 
   const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
