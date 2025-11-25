@@ -176,11 +176,18 @@ export default function History({ navigation }) {
     await loadMonthSummary(year);
   };
 
-  // 화면에 돌아올 때마다 최신값 로딩
   useEffect(() => {
-    const unsub = navigation.addListener('focus', loadAllSummaries);
+    const unsub = navigation.addListener('focus', () => {
+      loadAllSummaries(); // 월 요약 다시 불러오기
+
+      // 🔥 추가!!
+      const year = baseDate.year();
+      const month = baseDate.month() + 1;
+      loadDaySummary(year, month, daysOfWeek); // 일 요약 갱신
+    });
+
     return unsub;
-  }, [baseDate]);
+  }, [baseDate, daysOfWeek]);
 
   // 월 요약이 바뀌면 연도 총합 갱신
   useEffect(() => {
@@ -349,10 +356,7 @@ export default function History({ navigation }) {
           <Text style={styles.tabText}>뒤로가기</Text>
         </Pressable>
 
-        <Pressable
-          style={styles.tabItem}
-          onPress={() => navigation.navigate('Home')}
-        >
+        <Pressable style={styles.tabItem}>
           <Ionicons name="wallet-outline" size={24} />
           <Text style={styles.tabText}>가계부 메인</Text>
         </Pressable>

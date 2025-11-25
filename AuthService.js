@@ -207,7 +207,7 @@ const AuthService = {
   // 목표 생성
   async createGoal(data) {
     try {
-      const token = await AsyncStorage.getItem('accessToken');
+      const token = await AsyncStorage.getItem(TOKEN_KEY);
       if (!token) return { success: false, message: '로그인이 필요합니다.' };
 
       const res = await api.post('/goals', data, {
@@ -525,8 +525,8 @@ const AuthService = {
       return { success: false, income: 0, expense: 0, total: 0 };
     }
   },
-  // AuthService.js
 
+  // 이메일 중복확인
   async checkDuplicatedEmail(email) {
     try {
       const res = await api.post('/users/check-email', {

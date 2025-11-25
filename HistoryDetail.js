@@ -407,7 +407,7 @@ export default function HistoryDetail({ route, navigation }) {
         </Pressable>
         <Pressable
           style={styles.tabItem}
-          onPress={() => navigation.navigate('Home')}
+          onPress={() => navigation.navigate('History')}
         >
           <Ionicons name="wallet-outline" size={24} color="#000" />
           <Text style={styles.tabText}>가계부 메인</Text>
