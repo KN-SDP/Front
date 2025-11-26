@@ -23,6 +23,7 @@ import Management from './Management';
 import ChangeNick from './ChangeNick';
 import Settings from './Settings';
 import SetAlarm from './SetAlarm';
+import Secession from './Secession';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -148,6 +149,7 @@ export default function App() {
         <Stack.Screen name="ChangeNick" component={ChangeNick} />
         <Stack.Screen name="Settings" component={Settings} />
         <Stack.Screen name="SetAlarm" component={SetAlarm} />
+        <Stack.Screen name="Secession" component={Secession} />
       </Stack.Navigator>
     </NavigationContainer>
   );

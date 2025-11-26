@@ -38,7 +38,10 @@ export default function Management({ navigation }) {
 
         <View style={styles.separator} />
 
-        <Pressable style={styles.menuRow}>
+        <Pressable
+          style={styles.menuRow}
+          onPress={() => navigation.navigate('Secession')}
+        >
           <Text style={[styles.menuText, { color: '#FF6E6E' }]}>회원 탈퇴</Text>
           <Ionicons name="close-circle-outline" size={18} color="#FF6E6E" />
         </Pressable>
