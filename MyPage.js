@@ -51,7 +51,10 @@ export default function MyPage({ navigation }) {
 
         <View style={styles.separator} />
 
-        <Pressable style={styles.menuRow}>
+        <Pressable
+          style={styles.menuRow}
+          onPress={() => navigation.navigate('SetAlarm')}
+        >
           <Text style={styles.menuText}>알림 설정</Text>
           <Ionicons name="chevron-forward-outline" size={18} color="#8FA6A1" />
         </Pressable>

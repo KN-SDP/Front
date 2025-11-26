@@ -22,6 +22,7 @@ import FindIdResult from './FindIdResult';
 import Management from './Management';
 import ChangeNick from './ChangeNick';
 import Settings from './Settings';
+import SetAlarm from './SetAlarm';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -146,6 +147,7 @@ export default function App() {
         <Stack.Screen name="Management" component={Management} />
         <Stack.Screen name="ChangeNick" component={ChangeNick} />
         <Stack.Screen name="Settings" component={Settings} />
+        <Stack.Screen name="SetAlarm" component={SetAlarm} />
       </Stack.Navigator>
     </NavigationContainer>
   );
