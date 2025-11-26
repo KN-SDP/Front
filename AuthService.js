@@ -548,6 +548,38 @@ const AuthService = {
       };
     }
   },
+  async changeNickname(newNickname) {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+
+      if (!token) {
+        return { success: false, message: '로그인이 필요합니다.' };
+      }
+
+      const res = await axios.patch(
+        `${BASE_URL}/users/nickname`,
+        { change_nickname: newNickname },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            accept: 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const message = res.data;
+
+      return { success: true, message };
+    } catch (err) {
+      console.log('❌ 닉네임 변경 실패:', err.response?.data);
+
+      const msg =
+        err.response?.data?.message || err.response?.data || '닉네임 변경 실패';
+
+      return { success: false, message: msg };
+    }
+  },
 };
 
 export default AuthService;

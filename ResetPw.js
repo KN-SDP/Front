@@ -33,8 +33,7 @@ export default function ResetPw({ navigation }) {
   const isPwValidLength = newPw.length >= 8 && newPw.length <= 20;
   const isPwMatch = newPw === confirmPw;
 
-  const canSubmit =
-    resetToken.trim() && isPwValidLength && isPwMatch && confirmPw.length > 0;
+  const canSubmit = isPwValidLength && isPwMatch && confirmPw.length > 0;
 
   const handleResetPw = async () => {
     if (!canSubmit) {

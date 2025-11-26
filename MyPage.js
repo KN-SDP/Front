@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable, StyleSheet, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AuthService from './AuthService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function MyPage({ navigation }) {
   const [nickname, setNickname] = useState('');

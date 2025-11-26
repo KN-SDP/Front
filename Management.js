@@ -2,6 +2,7 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Management({ navigation }) {
   return (
@@ -17,14 +18,20 @@ export default function Management({ navigation }) {
 
       {/* 목록 그룹 */}
       <View style={styles.menuGroup}>
-        <Pressable style={styles.menuRow}>
+        <Pressable
+          style={styles.menuRow}
+          onPress={() => navigation.navigate('ChangeNick')}
+        >
           <Text style={styles.menuText}>닉네임 수정</Text>
           <Ionicons name="chevron-forward-outline" size={18} color="#8FA6A1" />
         </Pressable>
 
         <View style={styles.separator} />
 
-        <Pressable style={styles.menuRow}>
+        <Pressable
+          style={styles.menuRow}
+          onPress={() => navigation.navigate('ResetPw')}
+        >
           <Text style={styles.menuText}>비밀번호 변경</Text>
           <Ionicons name="chevron-forward-outline" size={18} color="#8FA6A1" />
         </Pressable>
