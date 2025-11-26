@@ -21,6 +21,7 @@ import HistoryDetail from './HistoryDetail';
 import FindIdResult from './FindIdResult';
 import Management from './Management';
 import ChangeNick from './ChangeNick';
+import Settings from './Settings';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -144,6 +145,7 @@ export default function App() {
         <Stack.Screen name="FindIdResult" component={FindIdResult} />
         <Stack.Screen name="Management" component={Management} />
         <Stack.Screen name="ChangeNick" component={ChangeNick} />
+        <Stack.Screen name="Settings" component={Settings} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -363,9 +363,12 @@ export default function Home({ navigation }) {
 
         {/* 환영 메시지 */}
         <View style={styles.sidebarWelcomeBox}>
-          <Text style={styles.sidebarWelcomeText}>
-            {user?.nickname || '사용자'}님 환영합니다.
-          </Text>
+          <View style={styles.sidebarWelcomeRow}>
+            <Text style={styles.sidebarNickname}>
+              {user?.nickname || '사용자'}
+            </Text>
+            <Text style={styles.sidebarWelcomeSuffix}>님 환영합니다.</Text>
+          </View>
         </View>
 
         {/* 카테고리 탭 */}
@@ -533,7 +536,10 @@ export default function Home({ navigation }) {
             <Text style={styles.bottomItemText}>마이페이지</Text>
           </Pressable>
 
-          <Pressable style={styles.bottomItem}>
+          <Pressable
+            style={styles.bottomItem}
+            onPress={() => navigation.navigate('Settings')}
+          >
             <Ionicons name="settings-outline" size={22} color="#FFFFFF" />
             <Text style={styles.bottomItemText}>설정</Text>
           </Pressable>
@@ -858,16 +864,31 @@ const styles = StyleSheet.create({
 
   sidebarWelcomeBox: {
     backgroundColor: '#035951',
-    paddingVertical: 6,
-    paddingHorizontal: 141,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 8,
     marginBottom: 20,
+    width: '100%',
+    alignItems: 'center',
   },
 
-  sidebarWelcomeText: {
+  sidebarWelcomeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'nowrap',
+  },
+
+  sidebarNickname: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+
+  sidebarWelcomeSuffix: {
     color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '600',
+    marginLeft: 4,
   },
 
   sidebarTabs: {

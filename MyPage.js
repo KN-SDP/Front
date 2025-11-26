@@ -104,7 +104,10 @@ export default function MyPage({ navigation }) {
           <Text style={styles.bottomItemText}>마이페이지</Text>
         </Pressable>
 
-        <Pressable style={styles.bottomItem}>
+        <Pressable
+          style={styles.bottomItem}
+          onPress={() => navigation.navigate('Settings')}
+        >
           <Ionicons name="settings-outline" size={22} color="#FFFFFF" />
           <Text style={styles.bottomItemText}>설정</Text>
         </Pressable>

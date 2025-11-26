@@ -1,50 +1,39 @@
-// Management.js (계정 관리)
+// Settings.js
 import React from 'react';
 import { View, Text, Pressable, StyleSheet, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function Management({ navigation }) {
+export default function Settings({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
-      {/* 상단 헤더 */}
+      {/* HEADER */}
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={26} color="#BFBFBF" />
         </Pressable>
-        <Text style={styles.headerTitle}>계정 관리</Text>
+        <Text style={styles.headerTitle}>설정</Text>
         <View style={{ width: 26 }} />
       </View>
 
-      {/* 목록 그룹 */}
-      <View style={styles.menuGroup}>
-        <Pressable
-          style={styles.menuRow}
-          onPress={() => navigation.navigate('ChangeNick')}
-        >
-          <Text style={styles.menuText}>닉네임 수정</Text>
-          <Ionicons name="chevron-forward-outline" size={18} color="#8FA6A1" />
+      {/* MENU LIST */}
+      <View style={styles.menuWrap}>
+        <View style={styles.separator} />
+        <Pressable style={styles.menuItem}>
+          <Text style={styles.menuText}>FAQ</Text>
         </Pressable>
-
         <View style={styles.separator} />
 
-        <Pressable
-          style={styles.menuRow}
-          onPress={() => navigation.navigate('ResetPw')}
-        >
-          <Text style={styles.menuText}>비밀번호 변경</Text>
-          <Ionicons name="chevron-forward-outline" size={18} color="#8FA6A1" />
+        <Pressable style={styles.menuItem}>
+          <Text style={styles.menuText}>서비스 이용약관</Text>
         </Pressable>
-
         <View style={styles.separator} />
 
-        <Pressable style={styles.menuRow}>
-          <Text style={[styles.menuText, { color: '#FF6E6E' }]}>회원 탈퇴</Text>
-          <Ionicons name="close-circle-outline" size={18} color="#FF6E6E" />
+        <Pressable style={styles.menuItem}>
+          <Text style={styles.menuText}>개인정보처리방침</Text>
         </Pressable>
+        <View style={styles.separator} />
       </View>
 
-      {/* 하단 메뉴 */}
       <View style={styles.sidebarBottomMenu}>
         <Pressable
           style={styles.bottomItem}
@@ -82,55 +71,50 @@ export default function Management({ navigation }) {
   );
 }
 
+/* -------------------------- STYLES -------------------------- */
+
 const BG = '#022326';
-const CARD = '#034040';
-const TEXT_MAIN = '#FFFFFF';
-const TEXT_SUB = '#BFBFBF';
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: BG },
+  container: {
+    flex: 1,
+    backgroundColor: BG,
+  },
 
-  /******** Header ********/
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 0.7,
-    borderColor: '#2D4D4A',
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '700',
-    color: TEXT_MAIN,
+    paddingVertical: 16,
   },
 
-  /******** Menu Group ********/
-  menuGroup: {
-    marginTop: 10,
-    marginHorizontal: 20,
-    backgroundColor: CARD,
-    borderRadius: 16,
-    paddingVertical: 8,
+  headerTitle: {
+    color: '#BFBFBF',
+    fontSize: 18,
+    fontWeight: '700',
+    marginLeft: 8,
+    textAlign: 'left',
   },
-  menuRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-    alignItems: 'center',
+
+  menuWrap: {
+    paddingTop: 8,
   },
+
+  menuItem: {
+    paddingVertical: 17,
+    paddingHorizontal: 20,
+  },
+
   menuText: {
-    color: TEXT_MAIN,
+    color: '#BFBFBF',
     fontSize: 15,
     fontWeight: '600',
   },
+
   separator: {
     height: 1,
-    backgroundColor: '#1C3D3A',
-    marginHorizontal: 14,
+    backgroundColor: '#034040',
+    marginHorizontal: 16,
   },
 
   sidebarBottomMenu: {
@@ -145,15 +129,12 @@ const styles = StyleSheet.create({
 
     paddingHorizontal: 50,
     paddingVertical: 18,
-
     borderTopWidth: 0.7,
     borderColor: '#035951',
     backgroundColor: '#022326',
   },
 
-  bottomItem: {
-    alignItems: 'center',
-  },
+  bottomItem: { alignItems: 'center' },
 
   bottomItemText: {
     marginTop: 4,
