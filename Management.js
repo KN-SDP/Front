@@ -30,7 +30,7 @@ export default function Management({ navigation }) {
 
         <Pressable
           style={styles.menuRow}
-          onPress={() => navigation.navigate('ResetPw')}
+          onPress={() => navigation.navigate('LoginResetPw')}
         >
           <Text style={styles.menuText}>비밀번호 변경</Text>
           <Ionicons name="chevron-forward-outline" size={18} color="#8FA6A1" />

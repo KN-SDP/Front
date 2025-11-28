@@ -24,6 +24,7 @@ import ChangeNick from './ChangeNick';
 import Settings from './Settings';
 import SetAlarm from './SetAlarm';
 import Secession from './Secession';
+import LoginResetPw from './LoginResetPw';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -150,6 +151,7 @@ export default function App() {
         <Stack.Screen name="Settings" component={Settings} />
         <Stack.Screen name="SetAlarm" component={SetAlarm} />
         <Stack.Screen name="Secession" component={Secession} />
+        <Stack.Screen name="LoginResetPw" component={LoginResetPw} />
       </Stack.Navigator>
     </NavigationContainer>
   );

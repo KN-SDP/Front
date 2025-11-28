@@ -580,6 +580,28 @@ const AuthService = {
       return { success: false, message: msg };
     }
   },
+  // 로그인 후의 비밀번호 변경
+  async changePassword(data) {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      if (!token) return { success: false, message: '로그인이 필요합니다.' };
+
+      const res = await api.patch('/users/password', data, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      return { success: true, message: res.data.message };
+    } catch (err) {
+      const status = err.response?.data?.status;
+      const message = err.response?.data?.message;
+
+      return {
+        success: false,
+        message: message || '오류가 발생했습니다.',
+        status,
+      };
+    }
+  },
 };
 
 export default AuthService;
