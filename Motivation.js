@@ -11,6 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { LinearGradient } from 'expo-linear-gradient';
 import AuthService from './AuthService';
 
 const showAlert = (title, message) => {
@@ -36,11 +37,9 @@ const showConfirm = (title, message, onConfirm) => {
 
 export default function Motivation({ navigation }) {
   const [goals, setGoals] = useState([]);
-  const [viewMode, setViewMode] = useState('card'); // card | list
-
-  // 🔥 정렬 추가
   const [sortType, setSortType] = useState('latest'); // latest | progress
   const [sortOrder, setSortOrder] = useState('desc'); // desc | asc
+  const [viewMode, setViewMode] = useState('card');
 
   const loadGoals = async () => {
     const res = await AuthService.getGoals();
@@ -70,12 +69,10 @@ export default function Motivation({ navigation }) {
     });
   };
 
-  // 🔥 정렬 로직 (토글 포함)
   const sortedGoals = [...goals].sort((a, b) => {
     if (sortType === 'latest') {
       return sortOrder === 'desc' ? b.goalId - a.goalId : a.goalId - b.goalId;
     }
-
     if (sortType === 'progress') {
       return sortOrder === 'desc'
         ? b.progressRate - a.progressRate
@@ -84,97 +81,126 @@ export default function Motivation({ navigation }) {
     return 0;
   });
 
-  // 카드 렌더링
-  const renderCard = ({ item }) => (
-    <View style={styles.card}>
-      <View style={styles.cardRow}>
-        <Image
-          source={{ uri: item.imageUrl || undefined }}
-          style={styles.cardImage}
-        />
-        <View style={{ flex: 1, paddingLeft: 10 }}>
-          <Text style={styles.goalTitle}>{item.title}</Text>
+  const renderCard = ({ item }) => {
+    const percent = Math.round(item.progressRate * 100);
 
-          <View style={styles.progressTrack}>
-            <View
-              style={[
-                styles.progressFill,
-                { width: `${item.progressRate * 100}%` },
-              ]}
-            />
-          </View>
+    return (
+      <View style={styles.card}>
+        <Image source={{ uri: item.imageUrl }} style={styles.cardImg} />
 
-          <Text style={styles.goalText}>
-            {item.currentAmount.toLocaleString()} /{' '}
+        <View style={styles.cardInfo}>
+          <Text style={styles.cardTitle}>{item.title}</Text>
+          <Text style={styles.cardMoney}>
             {item.targetAmount.toLocaleString()}원
-          </Text>
-          <Text style={styles.goalRate}>
-            달성률: {Math.round(item.progressRate * 100)}%
           </Text>
         </View>
 
-        <Pressable
-          onPress={() => handleDelete(item.goalId)}
-          style={styles.deleteBtn}
-        >
-          <Ionicons name="trash-outline" size={20} color="red" />
-        </Pressable>
+        <View style={styles.cardRight}>
+          <Ionicons
+            name={
+              percent === 100
+                ? 'heart'
+                : percent > 0
+                ? 'heart-half'
+                : 'heart-outline'
+            }
+            size={30}
+            color={percent > 0 ? '#6DC2B3' : '#AFC8C9'}
+          />
+          <Text style={styles.percentText}>{percent}%</Text>
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
-  // 한줄 리스트 렌더링
-  const renderRow = ({ item }) => (
-    <View style={styles.rowItem}>
-      <Text style={{ flex: 2 }}>{item.title}</Text>
-      <Text style={{ flex: 2 }}>{item.targetAmount.toLocaleString()}원</Text>
-      <Text style={{ flex: 1 }}>{Math.round(item.progressRate * 100)}%</Text>
+  const renderRow = ({ item }) => {
+    const percent = Math.round(item.progressRate * 100);
 
-      <Pressable
-        onPress={() => handleDelete(item.goalId)}
-        style={styles.rowDeleteBtn}
-      >
-        <Ionicons name="trash-outline" size={20} color="red" />
-      </Pressable>
-    </View>
-  );
+    return (
+      <View style={styles.rowWrapper}>
+        <View style={styles.rowBackground}>
+          {/* 진행도 그라데이션 */}
+          <LinearGradient
+            colors={['#1C7C6D', '#3FAF8C']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.rowProgress, { width: `${percent}%` }]}
+          />
+
+          {/* 텍스트 */}
+          <View style={styles.rowContent}>
+            <Text style={styles.rowLabel}>
+              {item.title} / {item.targetAmount.toLocaleString()}원
+            </Text>
+            <Text style={styles.rowPercentText}>{percent}%</Text>
+          </View>
+        </View>
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* Top Bar */}
-      <View style={styles.topBar}>
+      {/* 상단 헤더 */}
+      <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#000" />
+          <Ionicons name="chevron-back" size={26} color="#BFBFBF" />
         </Pressable>
-        <Text style={styles.title}>Smart Ledger</Text>
-        <View style={{ width: 24 }} />
+        <Text style={styles.headerTitle}>목표</Text>
+        <View style={{ width: 26 }} />
       </View>
 
-      {/* Filter Bar */}
-      <View style={styles.filterBar}>
+      {/* 카테고리 + 정렬 */}
+      <View style={styles.categoryBar}>
         {/* 카드형 */}
-        <Pressable style={styles.filterBtn} onPress={() => setViewMode('card')}>
-          <Ionicons
-            name={viewMode === 'card' ? 'list' : 'list-outline'}
-            size={18}
-          />
-          <Text>카드</Text>
-        </Pressable>
-
-        {/* 리스트형 */}
-        <Pressable style={styles.filterBtn} onPress={() => setViewMode('list')}>
-          <Ionicons
-            name={
-              viewMode === 'list' ? 'reorder-three' : 'reorder-three-outline'
-            }
-            size={18}
-          />
-          <Text>한줄</Text>
-        </Pressable>
-
-        {/* 최신순 정렬 (토글 포함) */}
         <Pressable
-          style={styles.filterBtn}
+          style={[
+            styles.categoryBtn,
+            viewMode === 'card' && styles.categoryBtnActive,
+          ]}
+          onPress={() => setViewMode('card')}
+        >
+          <Ionicons
+            name="apps-outline"
+            size={18}
+            color={viewMode === 'card' ? '#fff' : '#AFC8C9'}
+          />
+          <Text
+            style={[
+              styles.categoryText,
+              { color: viewMode === 'card' ? '#fff' : '#AFC8C9' },
+            ]}
+          >
+            카드형
+          </Text>
+        </Pressable>
+
+        {/* 한줄형 */}
+        <Pressable
+          style={[
+            styles.categoryBtn,
+            viewMode === 'list' && styles.categoryBtnActive,
+          ]}
+          onPress={() => setViewMode('list')}
+        >
+          <Ionicons
+            name="reorder-three-outline"
+            size={18}
+            color={viewMode === 'list' ? '#fff' : '#AFC8C9'}
+          />
+          <Text
+            style={[
+              styles.categoryText,
+              { color: viewMode === 'list' ? '#fff' : '#AFC8C9' },
+            ]}
+          >
+            한줄형
+          </Text>
+        </Pressable>
+
+        {/* 최신순 */}
+        <Pressable
+          style={styles.sortBtn}
           onPress={() => {
             if (sortType === 'latest') {
               setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
@@ -184,18 +210,17 @@ export default function Motivation({ navigation }) {
             }
           }}
         >
-          <Text style={{ fontWeight: sortType === 'latest' ? '700' : '400' }}>
-            최신순
-          </Text>
+          <Text style={styles.sortText}>최신순</Text>
           <Ionicons
             name={sortOrder === 'desc' ? 'chevron-down' : 'chevron-up'}
             size={16}
+            color="#fff"
           />
         </Pressable>
 
-        {/* 진행도순 정렬 (토글 포함) */}
+        {/* 진행도순 */}
         <Pressable
-          style={styles.filterBtn}
+          style={styles.sortBtn}
           onPress={() => {
             if (sortType === 'progress') {
               setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
@@ -205,204 +230,271 @@ export default function Motivation({ navigation }) {
             }
           }}
         >
-          <Text style={{ fontWeight: sortType === 'progress' ? '700' : '400' }}>
-            진행도순
-          </Text>
+          <Text style={styles.sortText}>진행도순</Text>
           <Ionicons
             name={sortOrder === 'desc' ? 'chevron-down' : 'chevron-up'}
             size={16}
+            color="#fff"
           />
         </Pressable>
       </View>
 
       {/* 리스트 */}
-      {sortedGoals.length === 0 ? (
-        <View style={styles.emptyBox}>
-          <Text style={styles.emptyText}>
-            마음에 꼭 드는 목표를 정하는 순간,{'\n'}저축은 더 즐거워져요.
-          </Text>
-          <Pressable
-            style={styles.addCircle}
-            onPress={() => navigation.navigate('AddMotivation')}
-          >
-            <Ionicons name="add" size={28} color="#555" />
-          </Pressable>
-        </View>
-      ) : viewMode === 'card' ? (
+      {viewMode === 'card' ? (
         <FlatList
           data={sortedGoals}
           renderItem={renderCard}
           keyExtractor={(item) => item.goalId.toString()}
-          contentContainerStyle={{ paddingBottom: 100 }}
-          ListFooterComponent={
-            <Pressable
-              style={styles.addCircleBottom}
-              onPress={() => navigation.navigate('AddMotivation')}
-            >
-              <Ionicons name="add" size={28} color="#555" />
-            </Pressable>
-          }
+          contentContainerStyle={{ paddingBottom: 120 }}
         />
       ) : (
-        <>
-          <View style={styles.rowHeader}>
-            <Text style={{ flex: 2, fontWeight: '600' }}>이름</Text>
-            <Text style={{ flex: 2, fontWeight: '600' }}>가격</Text>
-            <Text style={{ flex: 1, fontWeight: '600' }}>달성률</Text>
-            <View style={{ width: 40 }} />
-          </View>
-
-          <FlatList
-            data={sortedGoals}
-            renderItem={renderRow}
-            keyExtractor={(i) => i.goalId.toString()}
-            contentContainerStyle={{ paddingBottom: 100 }}
-          />
-        </>
+        <FlatList
+          data={sortedGoals}
+          renderItem={renderRow}
+          keyExtractor={(item) => item.goalId.toString()}
+          contentContainerStyle={{ paddingBottom: 120 }}
+        />
       )}
 
+      {/* Floating 추가 버튼 */}
+      <Pressable
+        style={styles.addBtn}
+        onPress={() => navigation.navigate('AddMotivation')}
+      >
+        <Ionicons name="add" size={32} color="#fff" />
+        <Text style={styles.addText}>추가하기</Text>
+      </Pressable>
       {/* 하단 탭바 */}
       <View style={styles.tabBar}>
         <Pressable
           onPress={() => navigation.navigate('Home')}
-          style={{ alignItems: 'center' }}
+          style={styles.tabItem}
         >
-          <Ionicons name="home" size={24} />
-          <Text>홈</Text>
+          <Ionicons name="home" size={22} color="#F4F8F7" />
+          <Text style={styles.tabLabelActive}>메인</Text>
         </Pressable>
+
         <Pressable
           onPress={() => navigation.navigate('Motivation')}
-          style={{ alignItems: 'center' }}
+          style={styles.tabItem}
         >
-          <Ionicons name="heart" size={24} />
-          <Text>목표</Text>
+          <Ionicons name="heart" size={22} color="#9FB8B3" />
+          <Text style={styles.tabLabel}>목표</Text>
         </Pressable>
+
         <Pressable
           onPress={() => navigation.navigate('History')}
-          style={{ alignItems: 'center' }}
+          style={styles.tabItem}
         >
-          <Ionicons name="stats-chart" size={24} />
-          <Text>내역</Text>
+          <Ionicons name="stats-chart" size={22} color="#9FB8B3" />
+          <Text style={styles.tabLabel}>내역</Text>
         </Pressable>
+
         <Pressable
           onPress={() => navigation.navigate('Assets')}
-          style={{ alignItems: 'center' }}
+          style={styles.tabItem}
         >
-          <Ionicons name="logo-usd" size={24} />
-          <Text>자산</Text>
+          <Ionicons name="wallet-outline" size={22} color="#9FB8B3" />
+          <Text style={styles.tabLabel}>자산</Text>
         </Pressable>
       </View>
     </SafeAreaView>
   );
 }
+const TEXT_MAIN = '#BFBFBF';
+const TEXT_SUB = '#FFFFFF';
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#fff' },
-  topBar: {
+  safe: {
+    flex: 1,
+    backgroundColor: '#001A1D',
+  },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+
+  headerTitle: {
+    color: '#BFBFBF',
+    fontSize: 18,
+    fontWeight: '700',
+    marginLeft: 8,
+    textAlign: 'left',
+  },
+  /* Category Bar */
+  categoryBar: {
+    flexDirection: 'row',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    gap: 10,
+  },
+  categoryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#3C7363',
+    gap: 6,
+  },
+  categoryBtnActive: {
+    borderColor: '#6DC2B3',
+    backgroundColor: '#123332',
+  },
+  categoryText: {
+    color: '#fff',
+    fontSize: 13,
+  },
+
+  sortBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0F2C2D',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    gap: 4,
+  },
+  sortText: {
+    color: '#fff',
+    fontSize: 13,
+  },
+
+  /* 카드 */
+  card: {
+    backgroundColor: '#034040',
+    borderRadius: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    marginHorizontal: 16,
+    marginBottom: 14,
+  },
+  cardImg: {
+    width: 60,
+    height: 60,
+    borderRadius: 10,
+  },
+  cardInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  cardTitle: {
+    fontSize: 16,
+    color: '#BFBFBF',
+    fontWeight: '600',
+  },
+  cardMoney: {
+    marginTop: 4,
+    fontSize: 13,
+    color: '#BFBFBF',
+  },
+  cardRight: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  percentText: {
+    fontSize: 13,
+    color: '#BFBFBF',
+  },
+  /* 한줄형 전체 wrapper */
+  rowWrapper: {
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+
+  /* 전체 바 */
+  rowBackground: {
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#034040', // 바탕색
+    overflow: 'hidden',
+    justifyContent: 'center',
+  },
+
+  /* 진행도 바 */
+  rowProgress: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: '#3FAF8C', // 그라데이션 대신 단색
+    opacity: 0.45,
+    borderRadius: 12,
+  },
+
+  /* 텍스트 위치 정렬 */
+  rowContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderColor: '#ddd',
-  },
-  title: { fontSize: 18, fontWeight: '700' },
-  filterBar: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderColor: '#ddd',
-    paddingVertical: 6,
-  },
-  filterBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 4,
   },
 
-  card: {
-    backgroundColor: '#f5f5f5',
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 10,
-  },
-  cardRow: { flexDirection: 'row', alignItems: 'center' },
-  cardImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    backgroundColor: '#ddd',
-  },
-  goalTitle: { fontSize: 15, fontWeight: '600' },
-  progressTrack: {
-    width: '100%',
-    height: 8,
-    backgroundColor: '#ddd',
-    borderRadius: 4,
-    marginVertical: 4,
-  },
-  progressFill: { height: '100%', backgroundColor: '#aaa', borderRadius: 4 },
-  goalText: { fontSize: 12, color: '#666' },
-  goalRate: { fontSize: 12, fontWeight: '600', marginTop: 2 },
-
-  rowHeader: {
-    flexDirection: 'row',
-    padding: 10,
-    borderBottomWidth: 1,
-    borderColor: '#ccc',
-  },
-  rowItem: {
-    flexDirection: 'row',
-    padding: 12,
-    borderBottomWidth: 1,
-    borderColor: '#eee',
-    alignItems: 'center',
-  },
-  rowDeleteBtn: {
-    width: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
+  rowLabel: {
+    color: '#BFBFBF',
+    fontSize: 14,
+    fontWeight: '500',
   },
 
-  emptyBox: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { fontSize: 15, textAlign: 'center', marginBottom: 20 },
-  addCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#eee',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  addCircleBottom: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#eee',
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'center',
-    marginVertical: 15,
-  },
-  deleteBtn: {
-    padding: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
+  rowPercentText: {
+    color: '#BFBFBF',
+    fontSize: 14,
+    fontWeight: '600',
   },
 
-  tabBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    height: 60,
-    borderTopWidth: 1,
-    borderTopColor: '#000',
-    backgroundColor: '#fff',
+  /* Floating */
+  addBtn: {
     position: 'absolute',
-    bottom: 0,
+    right: 24,
+    bottom: 100,
+    width: 80,
+    height: 80,
+    backgroundColor: '#3C7363',
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  addText: {
+    color: '#fff',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  tabBar: {
+    position: 'absolute',
     left: 0,
     right: 0,
+    bottom: 0,
+    height: 68,
+    paddingBottom: 8,
+    paddingTop: 6,
+    backgroundColor: '#061D1D',
+    borderTopWidth: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-end',
+  },
+  tabItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabLabel: {
+    marginTop: 2,
+    fontSize: 11,
+    color: TEXT_SUB,
+  },
+  tabLabelActive: {
+    marginTop: 2,
+    fontSize: 11,
+    color: TEXT_MAIN,
+    fontWeight: '700',
   },
 });
