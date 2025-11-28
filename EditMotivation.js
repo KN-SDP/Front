@@ -14,13 +14,15 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import * as ImagePicker from 'expo-image-picker';
-import AuthService from './AuthService';
+import { useRoute } from '@react-navigation/native';
 
+// ===== 공통 Alert =====
 const showAlert = (title, message) => {
   if (Platform.OS === 'web') alert(`${title}\n\n${message}`);
   else Alert.alert(title, message);
 };
 
+// ===== 캘린더 한국어 =====
 LocaleConfig.locales['kr'] = {
   monthNames: [
     '1월',
@@ -63,21 +65,18 @@ LocaleConfig.locales['kr'] = {
 };
 LocaleConfig.defaultLocale = 'kr';
 
-export default function AddMotivation({ navigation }) {
-  const [title, setTitle] = useState('');
-  const [price, setPrice] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [imageUri, setImageUri] = useState(null); // 사진 담을 곳
-  const [submitting, setSubmitting] = useState(false);
+export default function EditMotivation({ navigation }) {
+  const { params } = useRoute();
+  const goal = params?.goal;
 
-  const canSubmit =
-    title.trim() !== '' &&
-    price.trim() !== '' &&
-    Number(price) > 0 &&
-    startDate &&
-    endDate;
+  // ===== 초기값 세팅 =====
+  const [imageUri, setImageUri] = useState(goal?.imageUrl || null);
+  const [title, setTitle] = useState(goal?.title || '');
+  const [price, setPrice] = useState(String(goal?.targetAmount || ''));
+  const [startDate, setStartDate] = useState(goal?.startDate || ''); // 서버 없으므로 비워둠
+  const [endDate, setEndDate] = useState(goal?.deadline || '');
 
+  // ===== 이미지 선택 =====
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
@@ -94,112 +93,92 @@ export default function AddMotivation({ navigation }) {
     }
   };
 
-  // 미리보기/이미지 선택은 API 받으면 연결됨
-  const handleImageSelect = () => {
-    Alert.alert('추가 예정', '사진 업로드 API 받으면 연결할게!');
-  };
-
-  const handleSubmit = async () => {
-    if (!canSubmit || submitting) return;
-
-    setSubmitting(true);
-
-    const payload = {
-      title,
-      imageUrl: imageUri,
-      targetAmount: Number(price),
-      deadline: endDate,
-    };
-
-    try {
-      const res = await AuthService.createGoal(payload);
-
-      if (res.success) {
-        showAlert('완료', '목표가 저장되었습니다!');
-        navigation.navigate('Motivation');
-      } else {
-        showAlert('오류', res.message || '문제가 발생했습니다.');
-      }
-    } catch (err) {
-      showAlert('오류', '문제가 발생했습니다.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  // ===== 날짜 선택 =====
   const handleDayPress = (day) => {
-    const selected = day.dateString; // 'YYYY-MM-DD'
+    const selected = day.dateString;
 
-    // 1) 시작/종료 둘 다 비어있거나, 둘 다 이미 선택된 상태 → 새로 시작 날짜만 지정
     if (!startDate || (startDate && endDate)) {
       setStartDate(selected);
       setEndDate('');
       return;
     }
 
-    // 2) 시작만 있는 상태
     if (!endDate) {
-      // 같은 날짜 다시 누르면 시작 해제
       if (selected === startDate) {
         setStartDate('');
         return;
       }
 
-      // 선택한 날짜가 시작보다 이전이면 시작만 바꾸기
       if (selected < startDate) {
         setStartDate(selected);
         return;
       }
 
-      // 선택한 날짜가 시작보다 이후면 종료로 설정
       setEndDate(selected);
     }
   };
 
+  // ===== 완료 버튼 =====
+  const handleSubmit = () => {
+    showAlert('알림', 'API 연결되면 수정사항을 저장할게!');
+  };
+
   return (
     <ScrollView style={styles.container}>
-      {/* 상단 헤더 */}
-      <View style={styles.header}>
+      {/* ===== 상단 헤더 ===== */}
+      <View style={styles.topBar}>
         <Pressable onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={28} color="#BFBFBF" />
         </Pressable>
+
+        <View style={styles.topRight}>
+          <Pressable style={styles.editBtn}>
+            <Text style={styles.editText}>편집</Text>
+          </Pressable>
+          <Pressable style={styles.deleteBtn}>
+            <Text style={styles.deleteText}>삭제</Text>
+          </Pressable>
+        </View>
       </View>
 
-      {/* 사진 추가 영역 */}
-      <View style={styles.imageArea}>
-        <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
-          <Text style={styles.imageButtonText}>사진 추가하기</Text>
-        </TouchableOpacity>
-
-        {imageUri && (
-          <Image source={{ uri: imageUri }} style={styles.previewImage} />
+      {/* ===== 이미지 영역 ===== */}
+      <View style={styles.imageWrap}>
+        {imageUri ? (
+          <Image source={{ uri: imageUri }} style={styles.imagePreview} />
+        ) : (
+          <View style={[styles.imagePreview, { backgroundColor: '#173033' }]} />
         )}
+
+        <TouchableOpacity style={styles.imageChangeBtn} onPress={pickImage}>
+          <Text style={styles.imageChangeText}>사진 수정하기</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* 입력 폼 구분선 */}
+      {/* 구분선 */}
       <View style={styles.sectionDivider} />
 
-      {/* 이름 */}
+      {/* ===== 이름 ===== */}
       <Text style={styles.label}>이름</Text>
       <TextInput
         style={styles.input}
-        placeholder="이름을 입력하세요"
+        placeholder="수정할 이름을 입력하세요"
         placeholderTextColor="#607072"
         value={title}
         onChangeText={setTitle}
       />
 
-      {/* 가격 */}
+      {/* ===== 가격 ===== */}
       <Text style={styles.label}>가격</Text>
       <TextInput
         style={styles.input}
-        placeholder="가격을 입력하세요"
+        placeholder="수정할 가격을 입력하세요"
         placeholderTextColor="#607072"
         keyboardType="numeric"
         value={price}
         onChangeText={setPrice}
       />
 
-      {/* 기간 */}
+      {/* ===== 기간 ===== */}
       <View style={styles.dateRow}>
         <Ionicons name="time-outline" size={20} color="#BFBFBF" />
         <Text style={styles.dateLabel}>제한 기간</Text>
@@ -211,21 +190,15 @@ export default function AddMotivation({ navigation }) {
         <Text style={styles.dateText}>{endDate || '2025.xx.xx'}</Text>
       </View>
 
-      {/* 캘린더 */}
+      {/* ===== 캘린더 ===== */}
       <Calendar
         onDayPress={handleDayPress}
         markedDates={{
           ...(startDate && {
-            [startDate]: {
-              selected: true,
-              selectedColor: '#3C7363',
-            },
+            [startDate]: { selected: true, selectedColor: '#3C7363' },
           }),
           ...(endDate && {
-            [endDate]: {
-              selected: true,
-              selectedColor: '#6DC2B3',
-            },
+            [endDate]: { selected: true, selectedColor: '#6DC2B3' },
           }),
         }}
         theme={{
@@ -239,25 +212,15 @@ export default function AddMotivation({ navigation }) {
         style={styles.calendar}
       />
 
-      {/* 완료 버튼 */}
-      <Pressable
-        onPress={handleSubmit}
-        disabled={!canSubmit || submitting}
-        style={[
-          styles.submitBtn,
-          { opacity: !canSubmit || submitting ? 0.5 : 1 },
-        ]}
-      >
-        {submitting ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.submitText}>완료</Text>
-        )}
-      </Pressable>
+      {/* ===== 완료 버튼 ===== */}
+      <TouchableOpacity style={styles.finishButton} onPress={handleSubmit}>
+        <Text style={styles.finishButtonText}>완료</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
 
+/* ========= 스타일 ========= */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -265,32 +228,51 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
   },
 
-  header: {
-    paddingVertical: 20,
-  },
-
-  // 사진 추가 영역
-  imageArea: {
-    width: '100%',
+  /* ===== Top bar ===== */
+  topBar: {
+    paddingVertical: 18,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 20,
   },
-  imageButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 26,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#6DC2B3',
+  topRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
   },
-  imageButtonText: {
+  editBtn: {},
+  editText: {
     color: '#BFBFBF',
     fontSize: 15,
   },
-  previewImage: {
-    marginTop: 20,
-    width: 220,
-    height: 220,
-    borderRadius: 14,
+  deleteBtn: {},
+  deleteText: {
+    color: '#FF5C5C',
+    fontSize: 15,
+  },
+
+  /* ===== 이미지 ===== */
+  imageWrap: {
+    width: '100%',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  imagePreview: {
+    width: '100%',
+    height: 300,
+    borderRadius: 12,
+  },
+  imageChangeBtn: {
+    position: 'absolute',
+    bottom: 14,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    paddingVertical: 8,
+    paddingHorizontal: 18,
+    borderRadius: 12,
+  },
+  imageChangeText: {
+    color: '#fff',
+    fontSize: 14,
   },
 
   sectionDivider: {
@@ -299,6 +281,7 @@ const styles = StyleSheet.create({
     marginVertical: 26,
   },
 
+  /* ===== 기본 입력 ===== */
   label: {
     color: '#BFBFBF',
     fontSize: 15,
@@ -313,7 +296,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
 
-  // 기간 선택
+  /* ===== 날짜 ===== */
   dateRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -353,19 +336,6 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   finishButtonText: {
-    color: '#BFBFBF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  submitBtn: {
-    backgroundColor: '#035951',
-    paddingVertical: 14,
-    borderRadius: 16,
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-
-  submitText: {
     color: '#BFBFBF',
     fontSize: 16,
     fontWeight: '600',
