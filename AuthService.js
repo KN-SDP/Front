@@ -203,29 +203,50 @@ const AuthService = {
       };
     }
   },
-
-  // 목표 생성
-  async createGoal(data) {
+  /** 목표 생성 (사진 포함) */
+  async createGoal({ title, targetAmount, deadline, imageUrl }) {
     try {
       const token = await AsyncStorage.getItem(TOKEN_KEY);
-      if (!token) return { success: false, message: '로그인이 필요합니다.' };
+      if (!token) {
+        return { success: false, message: '로그인이 필요합니다.' };
+      }
 
-      const res = await api.post('/goals', data, {
-        headers: { Authorization: `Bearer ${token}` },
+      const formData = new FormData();
+
+      // 🔹 이미지 처리 (모바일 + 웹 모두 지원)
+      if (imageUrl) {
+        if (Platform.OS === 'web') {
+          const response = await fetch(imageUrl);
+          const blob = await response.blob();
+          formData.append('image', blob, 'goal.jpg');
+        } else {
+          formData.append('image', {
+            uri: imageUrl,
+            type: 'image/jpeg',
+            name: 'goal.jpg',
+          });
+        }
+      }
+
+      // 🔹 다른 데이터들
+      formData.append('title', title);
+      formData.append('targetAmount', String(targetAmount));
+      formData.append('deadline', deadline);
+
+      // 🔹 서버 요청
+      const res = await api.post('/goals', formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
       return { success: true, message: res.data.message };
     } catch (err) {
-      console.log('Create goal error:', err.response?.data);
-
-      const status = err.response?.data?.status_code;
-      const message = err.response?.data?.message || '오류가 발생했습니다.';
-
-      if (status === 401) {
-        return { success: false, message: '로그인이 필요합니다.' };
-      }
-
-      return { success: false, message };
+      return {
+        success: false,
+        message: err.response?.data?.message || '목표 생성 실패',
+      };
     }
   },
 

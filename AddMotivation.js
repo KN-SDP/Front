@@ -5,15 +5,22 @@ import {
   TextInput,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
   Pressable,
+  ScrollView,
+  Image,
   Alert,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
+import * as ImagePicker from 'expo-image-picker';
 import AuthService from './AuthService';
 
-// ✅ 날짜 한국어 설정
+const showAlert = (title, message) => {
+  if (Platform.OS === 'web') alert(`${title}\n\n${message}`);
+  else Alert.alert(title, message);
+};
+
 LocaleConfig.locales['kr'] = {
   monthNames: [
     '1월',
@@ -48,29 +55,51 @@ LocaleConfig.locales['kr'] = {
     '월요일',
     '화요일',
     '수요일',
-    '수요일',
+    '목요일',
     '금요일',
     '토요일',
   ],
   dayNamesShort: ['일', '월', '화', '수', '목', '금', '토'],
-  today: '오늘',
 };
 LocaleConfig.defaultLocale = 'kr';
 
 export default function AddMotivation({ navigation }) {
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
+  const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [imageUri, setImageUri] = useState(null); // 사진 담을 곳
+  const pickImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      return showAlert('권한 필요', '사진 접근 권한을 허용해주세요.');
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setImageUri(result.assets[0].uri);
+    }
+  };
+
+  // 미리보기/이미지 선택은 API 받으면 연결됨
+  const handleImageSelect = () => {
+    Alert.alert('추가 예정', '사진 업로드 API 받으면 연결할게!');
+  };
 
   const handleSubmit = async () => {
-    if (!title.trim()) return Alert.alert('알림', '제목을 입력해주세요.');
+    if (!title.trim()) return showAlert('알림', '이름을 입력해주세요.');
     if (!price.trim() || Number(price) <= 0)
-      return Alert.alert('알림', '금액을 올바르게 입력해주세요.');
-    if (!endDate) return Alert.alert('알림', '마감 날짜를 선택해주세요.');
+      return showAlert('알림', '가격을 올바르게 입력해주세요.');
+    if (!startDate || !endDate)
+      return showAlert('알림', '기간을 선택해주세요.');
 
     const payload = {
-      title: title.trim(),
-      imageUrl: null, // 아직 이미지 업로드 없으므로 null
+      title,
+      imageUrl: imageUri,
       targetAmount: Number(price),
       deadline: endDate,
     };
@@ -78,10 +107,39 @@ export default function AddMotivation({ navigation }) {
     const res = await AuthService.createGoal(payload);
 
     if (res.success) {
-      Alert.alert('완료', '목표가 등록되었습니다.');
+      showAlert('완료', '목표가 저장되었습니다!');
       navigation.navigate('Motivation');
     } else {
-      Alert.alert('오류', res.message || '문제가 발생했습니다.');
+      showAlert('오류', res.message || '문제가 발생했습니다.');
+    }
+  };
+
+  const handleDayPress = (day) => {
+    const selected = day.dateString; // 'YYYY-MM-DD'
+
+    // 1) 시작/종료 둘 다 비어있거나, 둘 다 이미 선택된 상태 → 새로 시작 날짜만 지정
+    if (!startDate || (startDate && endDate)) {
+      setStartDate(selected);
+      setEndDate('');
+      return;
+    }
+
+    // 2) 시작만 있는 상태
+    if (!endDate) {
+      // 같은 날짜 다시 누르면 시작 해제
+      if (selected === startDate) {
+        setStartDate('');
+        return;
+      }
+
+      // 선택한 날짜가 시작보다 이전이면 시작만 바꾸기
+      if (selected < startDate) {
+        setStartDate(selected);
+        return;
+      }
+
+      // 선택한 날짜가 시작보다 이후면 종료로 설정
+      setEndDate(selected);
     }
   };
 
@@ -89,82 +147,191 @@ export default function AddMotivation({ navigation }) {
     <ScrollView style={styles.container}>
       {/* 상단 헤더 */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back-outline" size={28} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>새 목표 만들기</Text>
-        <View style={{ width: 28 }} />
+        <Pressable onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back" size={28} color="#BFBFBF" />
+        </Pressable>
       </View>
 
-      {/* 제목 */}
-      <Text style={styles.label}>제목</Text>
+      {/* 사진 추가 영역 */}
+      <View style={styles.imageArea}>
+        <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
+          <Text style={styles.imageButtonText}>사진 추가하기</Text>
+        </TouchableOpacity>
+
+        {imageUri && (
+          <Image source={{ uri: imageUri }} style={styles.previewImage} />
+        )}
+      </View>
+
+      {/* 입력 폼 구분선 */}
+      <View style={styles.sectionDivider} />
+
+      {/* 이름 */}
+      <Text style={styles.label}>이름</Text>
       <TextInput
         style={styles.input}
-        placeholder="예) 닌텐도 스위치"
+        placeholder="이름을 입력하세요"
+        placeholderTextColor="#607072"
         value={title}
         onChangeText={setTitle}
       />
 
-      {/* 날짜 */}
-      <Text style={styles.label}>목표 날짜 선택</Text>
-      <Text style={{ fontSize: 16 }}>{endDate || '날짜를 선택하세요'}</Text>
-
-      <Calendar
-        onDayPress={(day) => {
-          setEndDate(day.dateString);
-        }}
-        markedDates={{
-          [endDate]: { selected: true, selectedColor: 'black' },
-        }}
-        theme={{ todayTextColor: 'black' }}
-        style={{ marginTop: 15 }}
-      />
-
-      {/* 금액 */}
-      <Text style={styles.label}>목표 금액</Text>
+      {/* 가격 */}
+      <Text style={styles.label}>가격</Text>
       <TextInput
         style={styles.input}
-        placeholder="예) 400000"
+        placeholder="가격을 입력하세요"
+        placeholderTextColor="#607072"
         keyboardType="numeric"
         value={price}
         onChangeText={setPrice}
       />
 
-      {/* 저장 버튼 */}
-      <TouchableOpacity style={styles.saveButton} onPress={handleSubmit}>
-        <Text style={styles.saveButtonText}>저장하기</Text>
+      {/* 기간 */}
+      <View style={styles.dateRow}>
+        <Ionicons name="time-outline" size={20} color="#BFBFBF" />
+        <Text style={styles.dateLabel}>제한 기간</Text>
+      </View>
+
+      <View style={styles.dateSelectRow}>
+        <Text style={styles.dateText}>{startDate || '2025.xx.xx'}</Text>
+        <Text style={styles.dateArrow}>→</Text>
+        <Text style={styles.dateText}>{endDate || '2025.xx.xx'}</Text>
+      </View>
+
+      {/* 캘린더 */}
+      <Calendar
+        onDayPress={handleDayPress}
+        markedDates={{
+          ...(startDate && {
+            [startDate]: {
+              selected: true,
+              selectedColor: '#3C7363',
+            },
+          }),
+          ...(endDate && {
+            [endDate]: {
+              selected: true,
+              selectedColor: '#6DC2B3',
+            },
+          }),
+        }}
+        theme={{
+          backgroundColor: '#001A1D',
+          calendarBackground: '#001A1D',
+          dayTextColor: '#BFBFBF',
+          monthTextColor: '#BFBFBF',
+          arrowColor: '#6DC2B3',
+          todayTextColor: '#6DC2B3',
+        }}
+        style={styles.calendar}
+      />
+
+      {/* 완료 버튼 */}
+      <TouchableOpacity style={styles.finishButton} onPress={handleSubmit}>
+        <Text style={styles.finishButtonText}>완료</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', padding: 16 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-    paddingTop: 40,
+  container: {
+    flex: 1,
+    backgroundColor: '#001A1D',
+    paddingHorizontal: 18,
   },
-  headerTitle: { fontSize: 20, fontWeight: 'bold' },
-  label: { fontSize: 16, fontWeight: '600', marginTop: 20 },
+
+  header: {
+    paddingVertical: 20,
+  },
+
+  // 사진 추가 영역
+  imageArea: {
+    width: '100%',
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  imageButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 26,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#6DC2B3',
+  },
+  imageButtonText: {
+    color: '#BFBFBF',
+    fontSize: 15,
+  },
+  previewImage: {
+    marginTop: 20,
+    width: 220,
+    height: 220,
+    borderRadius: 14,
+  },
+
+  sectionDivider: {
+    height: 1,
+    backgroundColor: '#173033',
+    marginVertical: 26,
+  },
+
+  label: {
+    color: '#BFBFBF',
+    fontSize: 15,
+    marginBottom: 6,
+  },
   input: {
     borderBottomWidth: 1,
-    borderColor: '#ddd',
-    paddingVertical: 8,
-    fontSize: 16,
-  },
-  saveButton: {
-    marginTop: 30,
-    backgroundColor: '#000',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  saveButtonText: {
+    borderBottomColor: '#2F4C4C',
+    paddingVertical: 10,
+    fontSize: 15,
     color: '#fff',
+    marginBottom: 20,
+  },
+
+  // 기간 선택
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  dateLabel: {
+    marginLeft: 10,
+    color: '#BFBFBF',
+    fontSize: 15,
+  },
+  dateSelectRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 12,
+  },
+  dateText: {
+    color: '#BFBFBF',
     fontSize: 16,
-    fontWeight: 'bold',
+  },
+  dateArrow: {
+    marginHorizontal: 18,
+    color: '#BFBFBF',
+    fontSize: 16,
+  },
+
+  calendar: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 30,
+  },
+
+  finishButton: {
+    backgroundColor: '#173033',
+    paddingVertical: 14,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  finishButtonText: {
+    color: '#BFBFBF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

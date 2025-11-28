@@ -38,7 +38,9 @@ const showConfirm = (title, message, onConfirm) => {
 export default function Motivation({ navigation }) {
   const [goals, setGoals] = useState([]);
   const [sortType, setSortType] = useState('latest'); // latest | progress
-  const [sortOrder, setSortOrder] = useState('desc'); // desc | asc
+  const [latestOrder, setLatestOrder] = useState('desc');
+  const [progressOrder, setProgressOrder] = useState('desc');
+
   const [viewMode, setViewMode] = useState('card');
 
   const loadGoals = async () => {
@@ -71,10 +73,10 @@ export default function Motivation({ navigation }) {
 
   const sortedGoals = [...goals].sort((a, b) => {
     if (sortType === 'latest') {
-      return sortOrder === 'desc' ? b.goalId - a.goalId : a.goalId - b.goalId;
+      return latestOrder === 'desc' ? b.goalId - a.goalId : a.goalId - b.goalId;
     }
     if (sortType === 'progress') {
-      return sortOrder === 'desc'
+      return progressOrder === 'desc'
         ? b.progressRate - a.progressRate
         : a.progressRate - b.progressRate;
     }
@@ -84,15 +86,35 @@ export default function Motivation({ navigation }) {
   const renderCard = ({ item }) => {
     const percent = Math.round(item.progressRate * 100);
 
+    const image = item.imageUrl || null;
+
+    // 📌 날짜 포맷 (YYYY-MM-DD → YYYY.MM.DD)
+    const startDate = item.createdAt ? item.createdAt.replace(/-/g, '.') : null;
+
+    const endDate = item.deadline ? item.deadline.replace(/-/g, '.') : null;
+
     return (
       <View style={styles.card}>
-        <Image source={{ uri: item.imageUrl }} style={styles.cardImg} />
+        {/* 이미지 or 기본 박스 */}
+        {image ? (
+          <Image source={{ uri: image }} style={styles.cardImg} />
+        ) : (
+          <View style={[styles.cardImg, { backgroundColor: '#224140' }]} />
+        )}
 
         <View style={styles.cardInfo}>
           <Text style={styles.cardTitle}>{item.title}</Text>
+
           <Text style={styles.cardMoney}>
             {item.targetAmount.toLocaleString()}원
           </Text>
+
+          {/* 📌 추가: 시작일 ~ 종료일 */}
+          {startDate && endDate && (
+            <Text style={styles.cardPeriod}>
+              {startDate} ~ {endDate}
+            </Text>
+          )}
         </View>
 
         <View style={styles.cardRight}>
@@ -153,66 +175,69 @@ export default function Motivation({ navigation }) {
       {/* 카테고리 + 정렬 */}
       <View style={styles.categoryBar}>
         {/* 카드형 */}
-        <Pressable
-          style={[
-            styles.categoryBtn,
-            viewMode === 'card' && styles.categoryBtnActive,
-          ]}
-          onPress={() => setViewMode('card')}
-        >
-          <Ionicons
-            name="apps-outline"
-            size={18}
-            color={viewMode === 'card' ? '#fff' : '#AFC8C9'}
-          />
-          <Text
+        {/* === 카드형 / 한줄형 토글박스 === */}
+        <View style={styles.viewToggleBox}>
+          <Pressable
             style={[
-              styles.categoryText,
-              { color: viewMode === 'card' ? '#fff' : '#AFC8C9' },
+              styles.viewToggleItem,
+              viewMode === 'card' && styles.viewToggleItemActive,
+              { borderTopLeftRadius: 10, borderBottomLeftRadius: 10 },
             ]}
+            onPress={() => setViewMode('card')}
           >
-            카드형
-          </Text>
-        </Pressable>
+            <Ionicons
+              name="apps-outline"
+              size={16}
+              color={viewMode === 'card' ? '#fff' : '#AFC8C9'}
+            />
+            <Text
+              style={[
+                styles.viewToggleText,
+                { color: viewMode === 'card' ? '#fff' : '#AFC8C9' },
+              ]}
+            >
+              카드형
+            </Text>
+          </Pressable>
 
-        {/* 한줄형 */}
-        <Pressable
-          style={[
-            styles.categoryBtn,
-            viewMode === 'list' && styles.categoryBtnActive,
-          ]}
-          onPress={() => setViewMode('list')}
-        >
-          <Ionicons
-            name="reorder-three-outline"
-            size={18}
-            color={viewMode === 'list' ? '#fff' : '#AFC8C9'}
-          />
-          <Text
+          <Pressable
             style={[
-              styles.categoryText,
-              { color: viewMode === 'list' ? '#fff' : '#AFC8C9' },
+              styles.viewToggleItem,
+              viewMode === 'list' && styles.viewToggleItemActive,
+              { borderTopRightRadius: 10, borderBottomRightRadius: 10 },
             ]}
+            onPress={() => setViewMode('list')}
           >
-            한줄형
-          </Text>
-        </Pressable>
+            <Ionicons
+              name="reorder-three-outline"
+              size={16}
+              color={viewMode === 'list' ? '#fff' : '#AFC8C9'}
+            />
+            <Text
+              style={[
+                styles.viewToggleText,
+                { color: viewMode === 'list' ? '#fff' : '#AFC8C9' },
+              ]}
+            >
+              한줄형
+            </Text>
+          </Pressable>
+        </View>
 
         {/* 최신순 */}
         <Pressable
           style={styles.sortBtn}
           onPress={() => {
             if (sortType === 'latest') {
-              setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+              setLatestOrder(latestOrder === 'desc' ? 'asc' : 'desc');
             } else {
               setSortType('latest');
-              setSortOrder('desc');
             }
           }}
         >
           <Text style={styles.sortText}>최신순</Text>
           <Ionicons
-            name={sortOrder === 'desc' ? 'chevron-down' : 'chevron-up'}
+            name={latestOrder === 'desc' ? 'chevron-down' : 'chevron-up'}
             size={16}
             color="#fff"
           />
@@ -223,16 +248,15 @@ export default function Motivation({ navigation }) {
           style={styles.sortBtn}
           onPress={() => {
             if (sortType === 'progress') {
-              setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+              setProgressOrder(progressOrder === 'desc' ? 'asc' : 'desc');
             } else {
               setSortType('progress');
-              setSortOrder('desc');
             }
           }}
         >
           <Text style={styles.sortText}>진행도순</Text>
           <Ionicons
-            name={sortOrder === 'desc' ? 'chevron-down' : 'chevron-up'}
+            name={progressOrder === 'desc' ? 'chevron-down' : 'chevron-up'}
             size={16}
             color="#fff"
           />
@@ -401,6 +425,32 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#BFBFBF',
   },
+  viewToggleBox: {
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderColor: '#3C7363',
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+
+  viewToggleItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: 'transparent',
+    gap: 6,
+  },
+
+  viewToggleItemActive: {
+    backgroundColor: '#123332',
+  },
+
+  viewToggleText: {
+    fontSize: 13,
+  },
+
   /* 한줄형 전체 wrapper */
   rowWrapper: {
     paddingHorizontal: 16,
@@ -496,5 +546,10 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: TEXT_MAIN,
     fontWeight: '700',
+  },
+  cardPeriod: {
+    marginTop: 4,
+    fontSize: 12,
+    color: '#90AAA5',
   },
 });

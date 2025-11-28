@@ -272,7 +272,21 @@ export default function Home({ navigation }) {
             >
               {goals.map((item) => (
                 <View key={item.goalId} style={styles.goalCard}>
-                  <View style={styles.goalThumb} />
+                  {item.imageUrl ? (
+                    <Image
+                      source={{ uri: item.imageUrl }}
+                      style={styles.goalThumb}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View
+                      style={[
+                        styles.goalThumb,
+                        { backgroundColor: '#224140' }, // 🔥 이미지 없을 때 색
+                      ]}
+                    />
+                  )}
+
                   <View style={styles.goalInfo}>
                     <Text style={styles.goalTitle} numberOfLines={1}>
                       {item.title}
