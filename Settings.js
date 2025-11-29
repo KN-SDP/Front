@@ -4,12 +4,21 @@ import { View, Text, Pressable, StyleSheet, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CommonActions } from '@react-navigation/native';
+import { openSidebarRef } from './Home';
+
 export default function Settings({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       {/* HEADER */}
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()}>
+        <Pressable
+          onPress={() => {
+            navigation.navigate('Home');
+            setTimeout(() => {
+              openSidebarRef?.();
+            }, 10);
+          }}
+        >
           <Ionicons name="chevron-back" size={26} color="#BFBFBF" />
         </Pressable>
         <Text style={styles.headerTitle}>설정</Text>

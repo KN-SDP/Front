@@ -4,6 +4,7 @@ import { View, Text, Pressable, StyleSheet, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AuthService from './AuthService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { openSidebarRef } from './Home';
 
 export default function MyPage({ navigation }) {
   const [nickname, setNickname] = useState('');
@@ -25,7 +26,14 @@ export default function MyPage({ navigation }) {
     <SafeAreaView style={styles.container}>
       {/* 상단 헤더 */}
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()}>
+        <Pressable
+          onPress={() => {
+            navigation.navigate('Home');
+            setTimeout(() => {
+              openSidebarRef?.();
+            }, 10);
+          }}
+        >
           <Ionicons name="chevron-back" size={26} color="#BFBFBF" />
         </Pressable>
         <Text style={styles.headerTitle}>마이페이지</Text>

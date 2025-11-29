@@ -1,4 +1,6 @@
 // Home.js (새 디자인 적용 버전)
+export let openSidebarRef = null;
+
 import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
@@ -32,6 +34,12 @@ export default function Home({ navigation }) {
   const [monthIncome, setMonthIncome] = useState(0);
   const [monthExpense, setMonthExpense] = useState(0);
   const [monthTotal, setMonthTotal] = useState(0);
+  useEffect(() => {
+    openSidebarRef = () => {
+      setSidebarVisible(true);
+      sidebarAnim.setValue(0); // 또는 Animated.timing 써도 됨
+    };
+  }, []);
 
   useEffect(() => {
     let mounted = true;

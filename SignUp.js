@@ -84,7 +84,7 @@ export default function SignUp({ navigation, route }) {
   const [telDigits, setTelDigits] = useState('');
   const [birthDigits, setBirthDigits] = useState('');
   const [emailCheck, setEmailCheck] = useState(null);
-
+  const [emailFormatError, setEmailFormatError] = useState('');
   // 🔥 소셜 로그인 자동기입
   useEffect(() => {
     if (socialEmail) setEmail(socialEmail);
@@ -127,13 +127,28 @@ export default function SignUp({ navigation, route }) {
   };
 
   const handleCheckEmail = async () => {
-    if (!email.trim()) {
+    const emailTrim = email.trim();
+    setEmailFormatError('');
+
+    // 1) 빈값 체크
+    if (!emailTrim) {
+      showAlert('알림', '이메일을 입력해주세요.');
       setEmailCheck(null);
       return;
     }
 
+    // 2) 이메일 형식 체크
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(emailTrim)) {
+      setEmailFormatError('올바른 이메일 형식이 아닙니다.');
+      setEmailCheck(null);
+      return;
+    }
+
+    // 3) API 요청
     try {
-      const res = await AuthService.checkDuplicatedEmail(email);
+      const res = await AuthService.checkDuplicatedEmail(emailTrim);
 
       if (res.available === true) {
         setEmailCheck(true);
@@ -253,6 +268,7 @@ export default function SignUp({ navigation, route }) {
               onChangeText={(text) => {
                 setEmail(text);
                 setEmailCheck(null); // 👈 이메일 입력 바뀌면 결과 초기화
+                setEmailFormatError('');
               }}
               style={styles.input}
             />
@@ -261,12 +277,15 @@ export default function SignUp({ navigation, route }) {
               <Text style={styles.checkBtnText}>중복확인</Text>
             </Pressable>
           </View>
+          {emailFormatError ? (
+            <Text style={styles.pwErrorText}>{emailFormatError}</Text>
+          ) : null}
 
-          {emailCheck === true && (
+          {!emailFormatError && emailCheck === true && (
             <Text style={styles.emailOk}>사용 가능한 이메일입니다.</Text>
           )}
 
-          {emailCheck === false && (
+          {!emailFormatError && emailCheck === false && (
             <Text style={styles.emailError}>이미 존재하는 이메일입니다.</Text>
           )}
 
