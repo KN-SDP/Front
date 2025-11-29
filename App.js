@@ -87,9 +87,19 @@ export default function App() {
         socialName: pendingOAuth.username,
         socialNickname: pendingOAuth.nickname,
       });
+
+      // URL 정리
+      if (Platform.OS === 'web') {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
     } else {
       AsyncStorage.setItem('accessToken', pendingOAuth.token);
       navigationRef.current.navigate('Home');
+
+      // URL 정리
+      if (Platform.OS === 'web') {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
     }
 
     setPendingOAuth(null);
