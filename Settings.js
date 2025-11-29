@@ -2,7 +2,8 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CommonActions } from '@react-navigation/native';
 export default function Settings({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
@@ -37,9 +38,15 @@ export default function Settings({ navigation }) {
       <View style={styles.sidebarBottomMenu}>
         <Pressable
           style={styles.bottomItem}
-          onPress={() => {
-            AsyncStorage.removeItem('accessToken');
-            navigation.navigate('Login');
+          onPress={async () => {
+            await AsyncStorage.removeItem('accessToken');
+
+            navigation.dispatch(
+              CommonActions.reset({
+                index: 0,
+                routes: [{ name: 'Login' }],
+              })
+            );
           }}
         >
           <Ionicons name="log-out-outline" size={22} color="#FFFFFF" />
