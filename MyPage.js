@@ -5,13 +5,16 @@ import { Ionicons } from '@expo/vector-icons';
 import AuthService from './AuthService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { openSidebarRef } from './Home';
+import { useIsFocused } from '@react-navigation/native';
 
 export default function MyPage({ navigation }) {
   const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
 
+  const isFocused = useIsFocused();
+
   useEffect(() => {
-    (async () => {
+    const fetchUser = async () => {
       try {
         const user = await AuthService.getCurrentUser();
         setNickname(user?.nickname || '');
@@ -19,8 +22,12 @@ export default function MyPage({ navigation }) {
       } catch (e) {
         console.log('유저 정보 불러오기 실패:', e);
       }
-    })();
-  }, []);
+    };
+
+    if (isFocused) {
+      fetchUser(); // 🔥 화면 포커스될 때마다 실행됨
+    }
+  }, [isFocused]);
 
   return (
     <SafeAreaView style={styles.container}>

@@ -589,9 +589,14 @@ const AuthService = {
         }
       );
 
-      const message = res.data;
+      // 백엔드 응답: { nickname: "홍길동" }
+      const nickname = res.data?.nickname;
 
-      return { success: true, message };
+      return {
+        success: true,
+        nickname,
+        message: '닉네임이 변경되었습니다.',
+      };
     } catch (err) {
       console.log('❌ 닉네임 변경 실패:', err.response?.data);
 
@@ -601,6 +606,7 @@ const AuthService = {
       return { success: false, message: msg };
     }
   },
+
   // 로그인 후의 비밀번호 변경
   async changePassword(data) {
     try {

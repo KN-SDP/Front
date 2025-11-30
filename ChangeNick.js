@@ -30,13 +30,11 @@ export default function ChangeNick({ navigation }) {
     }
 
     setLoading(true);
-
     const res = await AuthService.changeNickname(nickname);
-
     setLoading(false);
 
     if (res.success) {
-      showAlert('완료', res.message);
+      showAlert('완료', `닉네임이 "${res.nickname}" 으로 변경되었습니다.`);
       navigation.goBack();
     } else {
       showAlert('오류', res.message);
