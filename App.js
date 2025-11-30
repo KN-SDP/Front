@@ -62,6 +62,11 @@ export default function App() {
     const isNewUser = params.get('isNewUser');
     const registerToken = params.get('registerToken');
 
+    console.log('📌 Raw Redirect URL:', window.location.href);
+    console.log('📌 token =', token);
+    console.log('📌 isNewUser =', isNewUser);
+    console.log('📌 registerToken =', registerToken);
+
     // 기존 유저 → token 존재
     if (token && isNewUser === 'false') {
       setPendingOAuth({ type: 'login', token });
