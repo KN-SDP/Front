@@ -30,6 +30,7 @@ import EditMotivation from './EditMotivation';
 import MotivationDetail from './MotivationDetail';
 import Assets from './Assets';
 import AddAssets from './AddAssets';
+import HistoryCheck from './HistoryCheck';
 
 const Stack = createNativeStackNavigator();
 
@@ -187,6 +188,7 @@ export default function App() {
         <Stack.Screen name="MotivationDetail" component={MotivationDetail} />
         <Stack.Screen name="Assets" component={Assets} />
         <Stack.Screen name="AddAssets" component={AddAssets} />
+        <Stack.Screen name="HistoryCheck" component={HistoryCheck} />
       </Stack.Navigator>
     </NavigationContainer>
   );

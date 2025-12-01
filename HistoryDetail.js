@@ -64,32 +64,58 @@ export default function HistoryDetail({ route, navigation }) {
     ? dayjs(selectedDate).format('YYYY년 M월 D일 (ddd)')
     : `${year}년 ${month}월`;
 
+  // -------------------------
+  //   카테고리 (백엔드 테이블 기준)
+  // -------------------------
   const categoryIncome = [
-    '급여',
-    '용돈',
-    '사업',
-    '투자',
-    '상금',
-    '장학금',
-    '기타',
+    { id: 1, name: '월급' },
+    { id: 2, name: '상여' },
+    { id: 3, name: '부수입' },
+    { id: 4, name: '투자소득' },
+    { id: 5, name: '기타소득' },
   ];
+
   const categoryExpense = [
-    '식비',
-    '카페',
-    '간식',
-    '교통',
-    '주거',
-    '공과금',
-    '통신',
-    '쇼핑',
-    '취미',
-    '운동',
-    '보험',
-    '의료',
-    '여행',
-    '구독 서비스',
-    '기타',
+    { id: 6, name: '비상금' },
+    { id: 7, name: '주거' },
+    { id: 8, name: '용돈' },
+    { id: 9, name: '보험' },
+    { id: 10, name: '통신비' },
+    { id: 11, name: '식비' },
+    { id: 12, name: '생활용품' },
+    { id: 13, name: '꾸밈비' },
+    { id: 14, name: '건강' },
+    { id: 15, name: '자기계발' },
+    { id: 16, name: '자동차' },
+    { id: 17, name: '여행' },
+    { id: 18, name: '문화' },
+    { id: 19, name: '경조사' },
+    { id: 20, name: '기타' },
   ];
+
+  const categorySaving = [
+    { id: 21, name: '예/적금' },
+    { id: 22, name: '생활원금' },
+    { id: 23, name: '주식' },
+    { id: 24, name: '청약' },
+    { id: 25, name: '연금' },
+    { id: 26, name: '금/달러' },
+  ];
+
+  const getCategoryListByType = () => {
+    if (mainType === '수입') return categoryIncome;
+    if (mainType === '저축') return categorySaving;
+    // 송금/수금은 일단 지출 카테고리 재사용
+    return categoryExpense;
+  };
+
+  const getTransactionType = () => {
+    if (mainType === '수입') return 'INCOME';
+    if (mainType === '지출') return 'EXPENSE';
+    if (mainType === '저축') return 'SAVING';
+    // 송금/수금 등 기타는 우선 EXPENSE 로 처리 (백엔드 정의에 맞게 필요시 수정)
+    return 'EXPENSE';
+  };
 
   // -------------------------
   //   데이터 불러오기
@@ -131,20 +157,13 @@ export default function HistoryDetail({ route, navigation }) {
     .reduce((sum, t) => sum + t.amount, 0);
 
   const balance = totalIncome - totalExpense;
-
-  // 삭제
-  const handleDelete = async (id) => {
-    try {
-      const res = await AuthService.deleteLedger(id);
-      if (res.success) {
-        await fetchTransactions();
-      } else {
-        alert('삭제 실패');
-      }
-    } catch (err) {
-      console.log(err);
+  useEffect(() => {
+    if (route.params?.refresh) {
+      fetchTransactions(); // 목록 다시 가져오기
+      navigation.setParams({ refresh: false }); // 플래그 초기화
     }
-  };
+  }, [route.params?.refresh]);
+
   const filteredTransactions = transactions.filter((t) => {
     if (selectedTab === '전체') return true;
     if (selectedTab === '소득') return t.type === 'INCOME';
@@ -162,7 +181,13 @@ export default function HistoryDetail({ route, navigation }) {
       return <Text style={styles.noData}>내역이 없습니다.</Text>;
 
     return filteredTransactions.map((item) => (
-      <View key={item.id} style={styles.listItem}>
+      <Pressable
+        key={item.id}
+        style={styles.listItem}
+        onPress={() =>
+          navigation.navigate('HistoryCheck', { ledgerId: item.id })
+        }
+      >
         <View style={{ flex: 1 }}>
           <Text style={styles.itemTitle}>{item.description}</Text>
           <Text style={styles.itemTime}>
@@ -182,10 +207,8 @@ export default function HistoryDetail({ route, navigation }) {
           {item.amount.toLocaleString()}원
         </Text>
 
-        <Pressable onPress={() => handleDelete(item.id)}>
-          <Ionicons name="trash-outline" size={22} color="#CFE8E4" />
-        </Pressable>
-      </View>
+        <Ionicons name="chevron-forward" size={18} color="#CFE8E4" />
+      </Pressable>
     ));
   };
 
@@ -193,7 +216,7 @@ export default function HistoryDetail({ route, navigation }) {
     <SafeAreaView style={styles.container}>
       {/* ---------------- 헤더 ---------------- */}
       <View style={styles.headerRow}>
-        <Pressable onPress={() => navigation.goBack()}>
+        <Pressable onPress={() => navigation.navigate('History')}>
           <Ionicons name="chevron-back" size={26} color="#BFBFBF" />
         </Pressable>
 
@@ -279,7 +302,10 @@ export default function HistoryDetail({ route, navigation }) {
               {['수입', '지출', '송금/수금', '저축'].map((t) => (
                 <Pressable
                   key={t}
-                  onPress={() => setMainType(t)}
+                  onPress={() => {
+                    setMainType(t);
+                    setSelectedCategory(null);
+                  }}
                   style={[
                     styles.addTypeBtn,
                     mainType === t && styles.addTypeBtnActive,
@@ -324,33 +350,33 @@ export default function HistoryDetail({ route, navigation }) {
 
             {/* 카테고리 */}
             <Text style={styles.categoryTitleInModal}>
-              카테고리({mainType === '수입' ? '수입' : '지출'})
+              카테고리({mainType})
             </Text>
 
             <View style={styles.categoryTagWrap}>
-              {(mainType === '수입' ? categoryIncome : categoryExpense).map(
-                (name, idx) => (
-                  <Pressable
-                    key={name + idx}
-                    onPress={() => setSelectedCategory(name)}
+              {getCategoryListByType().map((cat) => (
+                <Pressable
+                  key={cat.id}
+                  onPress={() => setSelectedCategory(cat)}
+                  style={[
+                    styles.categoryTagBtn,
+                    selectedCategory?.id === cat.id &&
+                      styles.categoryTagBtnActive,
+                  ]}
+                >
+                  <Text
                     style={[
-                      styles.categoryTagBtn,
-                      selectedCategory === name && styles.categoryTagBtnActive,
+                      styles.categoryTagBtnText,
+                      selectedCategory?.id === cat.id &&
+                        styles.categoryTagBtnTextActive,
                     ]}
                   >
-                    <Text
-                      style={[
-                        styles.categoryTagBtnText,
-                        selectedCategory === name &&
-                          styles.categoryTagBtnTextActive,
-                      ]}
-                    >
-                      {name}
-                    </Text>
-                  </Pressable>
-                )
-              )}
+                    {cat.name}
+                  </Text>
+                </Pressable>
+              ))}
             </View>
+
             <Text style={styles.addLabel}>날짜</Text>
             <Text style={styles.datePreview}>
               {selectedDate
@@ -370,9 +396,9 @@ export default function HistoryDetail({ route, navigation }) {
                     date: selectedDate || dayjs().format('YYYY-MM-DD'),
                     description: description.trim(),
                     amount: Number(amount),
-                    transactionType: mainType === '지출' ? 'EXPENSE' : 'INCOME',
+                    transactionType: getTransactionType(),
                     paymentType: 'BANK_TRANSFER',
-                    categoryId: 1,
+                    categoryId: selectedCategory.id,
                   };
 
                   const res = await AuthService.createExpense(payload);
@@ -411,6 +437,7 @@ export default function HistoryDetail({ route, navigation }) {
     </SafeAreaView>
   );
 }
+
 const TEXT_MAIN = '#BFBFBF';
 const TEXT_SUB = '#FFFFFF';
 

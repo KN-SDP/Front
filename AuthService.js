@@ -444,6 +444,26 @@ const AuthService = {
       };
     }
   },
+  // 가계부 상세 조회
+  async getLedgerDetail(id) {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      if (!token) return { success: false, message: '로그인이 필요합니다.' };
+
+      const res = await api.get(`/ledger/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      return { success: true, data: res.data };
+    } catch (err) {
+      console.log('❌ 상세조회 오류:', err.response?.data);
+      return {
+        success: false,
+        message: err.response?.data?.message || '오류가 발생했습니다.',
+      };
+    }
+  },
+
   // ✅ 가계부 내역 삭제 (정상 작동용)
   async deleteLedger(ledgerId) {
     try {
