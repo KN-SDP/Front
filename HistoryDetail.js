@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Modal,
   TextInput,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import dayjs from 'dayjs';
@@ -18,82 +19,96 @@ dayjs.locale('ko');
 
 export default function HistoryDetail({ route, navigation }) {
   const { selectedDate, selectedMonth, selectedYear } = route.params || {};
-  const today = dayjs();
 
+  const today = dayjs();
   const year = selectedYear || today.year();
   const month = selectedMonth || today.month() + 1;
 
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const slideAnim = useRef(new Animated.Value(0)).current;
   const [showAddModal, setShowAddModal] = useState(false);
-  const [mainType, setMainType] = useState('지출');
+
+  const [mainType, setMainType] = useState('수입');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
-  const [paymentType, setPaymentType] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
+
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedTab, setSelectedTab] = useState('전체');
+  const [submitting, setSubmitting] = useState(false);
 
-  // ✅ ENUM 매핑
-  const paymentMap = {
-    현금: 'CASH',
-    카드: 'CREDIT_CARD',
-    상품권: 'GIFT_CERTIFICATE',
-    계좌이체: 'BANK_TRANSFER',
+  const canSubmit =
+    description.trim() && amount && !isNaN(amount) && selectedCategory;
+
+  const openAddModal = () => {
+    setShowAddModal(true);
+    Animated.timing(slideAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
   };
 
-  // ✅ 실제 DB 기준으로 맞춘 매핑
-  const incomeCategories = {
-    월급: 1,
-    상여: 2,
-    부수입: 3,
-    투자소득: 4,
-    기타소득: 5,
-  };
-
-  const expenseCategories = {
-    비상금: 6,
-    주거: 7,
-    용돈: 8,
-    보험: 9,
-    통신비: 10,
-    식비: 11,
-    생활용품: 12,
-    꾸밈비: 13,
-    건강: 14,
-    자기계발: 15,
-    자동차: 16,
-    여행: 17,
+  const closeAddModal = () => {
+    Animated.timing(slideAnim, {
+      toValue: 0,
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => {
+      setShowAddModal(false);
+    });
   };
 
   const dateText = selectedDate
-    ? dayjs(selectedDate).format('YYYY년 M월 D일 dddd')
+    ? dayjs(selectedDate).format('YYYY년 M월 D일 (ddd)')
     : `${year}년 ${month}월`;
 
-  // ✅ 거래내역 가져오기
+  const categoryIncome = [
+    '급여',
+    '용돈',
+    '사업',
+    '투자',
+    '상금',
+    '장학금',
+    '기타',
+  ];
+  const categoryExpense = [
+    '식비',
+    '카페',
+    '간식',
+    '교통',
+    '주거',
+    '공과금',
+    '통신',
+    '쇼핑',
+    '취미',
+    '운동',
+    '보험',
+    '의료',
+    '여행',
+    '구독 서비스',
+    '기타',
+  ];
+
+  // -------------------------
+  //   데이터 불러오기
+  // -------------------------
   const fetchTransactions = async () => {
     try {
       setLoading(true);
 
-      // 🔥 일별 조회일 때 날짜 정확히 매칭시키기
       if (selectedDate) {
         const res = await AuthService.getLedgerList(selectedDate);
-
         const filtered = (res.data || []).filter(
           (t) => t.date === selectedDate
         );
-
-        console.log('📌 일별 필터링 후:', filtered);
-
         setTransactions(filtered);
         return;
       }
 
-      // 🟧 2) 월 기반 조회 (월별, fallback 적용)
       const res = await AuthService.getLedgerByMonth(year, month);
       setTransactions(res.data || []);
-      return;
-
-      // 🟥 3) fallback (should never happen)
-      setTransactions([]);
     } catch (err) {
       console.error('❌ 거래내역 불러오기 오류:', err);
       setTransactions([]);
@@ -106,6 +121,7 @@ export default function HistoryDetail({ route, navigation }) {
     fetchTransactions();
   }, [selectedDate]);
 
+  // 합계 계산
   const totalIncome = transactions
     .filter((t) => t.type === 'INCOME' || t.mainType === '수입')
     .reduce((sum, t) => sum + t.amount, 0);
@@ -113,150 +129,166 @@ export default function HistoryDetail({ route, navigation }) {
   const totalExpense = transactions
     .filter((t) => t.type === 'EXPENSE' || t.mainType === '지출')
     .reduce((sum, t) => sum + t.amount, 0);
+
   const balance = totalIncome - totalExpense;
 
-  // ✅ 날짜별 내역 렌더링
+  // 삭제
+  const handleDelete = async (id) => {
+    try {
+      const res = await AuthService.deleteLedger(id);
+      if (res.success) {
+        await fetchTransactions();
+      } else {
+        alert('삭제 실패');
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+  const filteredTransactions = transactions.filter((t) => {
+    if (selectedTab === '전체') return true;
+    if (selectedTab === '소득') return t.type === 'INCOME';
+    if (selectedTab === '소비') return t.type === 'EXPENSE';
+    return true;
+  });
+
+  // -------------------------
+  //   렌더링 함수
+  // -------------------------
   const renderTransactions = () => {
     if (loading) return <ActivityIndicator style={{ marginTop: 20 }} />;
-    if (transactions.length === 0)
-      return (
-        <Text style={{ textAlign: 'center', marginTop: 20, color: '#666' }}>
-          내역이 없습니다.
-        </Text>
-      );
 
-    return transactions.map((item) => (
-      <View key={item.id || item.transactionId} style={styles.listItem}>
-        <View>
+    if (transactions.length === 0)
+      return <Text style={styles.noData}>내역이 없습니다.</Text>;
+
+    return filteredTransactions.map((item) => (
+      <View key={item.id} style={styles.listItem}>
+        <View style={{ flex: 1 }}>
           <Text style={styles.itemTitle}>{item.description}</Text>
           <Text style={styles.itemTime}>
-            {item.time
-              ? item.time
-              : item.createdAt
-              ? dayjs(item.createdAt).format('HH:mm')
-              : ''}
+            {item.createdAt ? dayjs(item.createdAt).format('HH:mm') : ''}
           </Text>
         </View>
+
         <Text
           style={[
             styles.itemAmount,
-            {
-              color:
-                item.type?.trim?.().toUpperCase?.() === 'INCOME' ||
-                item.mainType === '수입'
-                  ? '#007700'
-                  : '#cc0000',
-            },
+            item.type === 'INCOME'
+              ? { color: '#50E3C2' }
+              : { color: '#FF7A7A' },
           ]}
         >
-          {item.type?.trim?.().toUpperCase?.() === 'INCOME' ||
-          item.mainType === '수입'
-            ? '+'
-            : '-'}
-          {Number(item.amount).toLocaleString()}원
+          {item.type === 'INCOME' ? '+' : '-'}
+          {item.amount.toLocaleString()}원
         </Text>
 
-        {/* 🗑️ 삭제 아이콘 추가 */}
         <Pressable onPress={() => handleDelete(item.id)}>
-          <Ionicons name="trash-outline" size={22} color="#333" />
+          <Ionicons name="trash-outline" size={22} color="#CFE8E4" />
         </Pressable>
       </View>
     ));
   };
-  const handleDelete = async (id) => {
-    try {
-      if (!id) return alert('삭제할 내역의 ID가 없습니다.');
-
-      setLoading(true);
-      const res = await AuthService.deleteLedger(id);
-
-      if (res.success) {
-        alert('✅ 내역이 삭제되었습니다.');
-        await fetchTransactions(); // 새로고침
-      } else {
-        alert('❌ 삭제 실패: ' + res.message);
-      }
-    } catch (err) {
-      console.error('삭제 오류:', err);
-      alert('서버 통신 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* 상단 헤더 */}
-      <View style={styles.header}>
+      {/* ---------------- 헤더 ---------------- */}
+      <View style={styles.headerRow}>
         <Pressable onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={24} color="#000" />
+          <Ionicons name="chevron-back" size={26} color="#BFBFBF" />
         </Pressable>
-        <Text style={styles.headerTitle}>Smart Ledger</Text>
-        <View style={{ width: 24 }} />
+
+        <Text style={styles.headerTitle}>내역</Text>
+
+        <View style={styles.headerRight}>
+          <Pressable onPress={openAddModal}>
+            <Ionicons name="add-circle-outline" size={28} color="#CFE8E4" />
+          </Pressable>
+        </View>
       </View>
 
-      <Text style={styles.dateText}>{dateText}</Text>
+      {/* ---------------- 날짜 ---------------- */}
+      <View style={styles.dateRow}>
+        <Ionicons name="calendar-outline" size={18} color="#CFE8E4" />
+        <Text style={[styles.dateText, { marginLeft: 8 }]}>{dateText}</Text>
+      </View>
 
-      {/* ✅ 요약 박스 */}
+      {/* ---------------- 합계 ---------------- */}
       <View style={styles.summaryBox}>
         <Text style={styles.balanceText}>{balance.toLocaleString()}원</Text>
-        <Text style={styles.subText}>
+        <Text style={styles.summarySub}>
           수입 : {totalIncome.toLocaleString()}원
         </Text>
-        <Text style={styles.subText}>
+        <Text style={styles.summarySub}>
           지출 : {totalExpense.toLocaleString()}원
         </Text>
       </View>
 
-      {/* ✅ 거래내역 */}
-      <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
-        <View style={styles.listHeader}>
-          <Text style={styles.listTitle}>전체</Text>
-          <Pressable onPress={() => setShowAddModal(true)}>
-            <Ionicons name="add-circle-outline" size={28} color="#000" />
-          </Pressable>
-        </View>
+      {/* ---------------- 카테고리 탭 ---------------- */}
+      <View style={styles.tabRow}>
+        <Pressable onPress={() => setSelectedTab('전체')}>
+          <Text
+            style={[styles.tabText, selectedTab === '전체' && styles.tabActive]}
+          >
+            전체
+          </Text>
+        </Pressable>
+
+        <Pressable onPress={() => setSelectedTab('소득')}>
+          <Text
+            style={[styles.tabText, selectedTab === '소득' && styles.tabActive]}
+          >
+            소득
+          </Text>
+        </Pressable>
+
+        <Pressable onPress={() => setSelectedTab('소비')}>
+          <Text
+            style={[styles.tabText, selectedTab === '소비' && styles.tabActive]}
+          >
+            소비
+          </Text>
+        </Pressable>
+      </View>
+
+      {/* ---------------- 리스트 ---------------- */}
+      <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
         {renderTransactions()}
       </ScrollView>
 
-      {/* ✅ 모달 */}
+      {/* ---------------- 추가 모달 ---------------- */}
       <Modal
         visible={showAddModal}
-        animationType="slide"
         transparent
+        animationType="fade"
         onRequestClose={() => setShowAddModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <Pressable
-              style={{ alignSelf: 'center', paddingVertical: 4 }}
-              onPress={() => setShowAddModal(false)}
-            >
-              <Ionicons name="chevron-down" size={24} color="#000" />
-            </Pressable>
+        {/* 바깥 영역 */}
+        <Pressable
+          style={styles.addModalOverlay}
+          onPress={() => setShowAddModal(false)} // ← 바깥 클릭 시 모달 닫힘
+        >
+          {/* 안쪽 모달 영역 */}
+          <Pressable
+            style={styles.addModalContainer}
+            onPress={(e) => e.stopPropagation()} // ← 모달 내부 클릭 시 닫힘 방지
+          >
+            <Text style={styles.addModalTitle}>가계부 내역 추가하기</Text>
 
-            <Text style={styles.modalTitle}>이용내역 추가하기</Text>
-            <Text style={styles.modalDate}>
-              {selectedDate
-                ? dayjs(selectedDate).format('YYYY.MM.DD')
-                : dayjs().format('YYYY.MM.DD')}
-            </Text>
-
-            {/* 수입/지출 선택 */}
-            <View style={styles.rowGroup}>
-              {['수입', '지출'].map((t) => (
+            {/* 타입 선택 */}
+            <View style={styles.addTypeRow}>
+              {['수입', '지출', '송금/수금', '저축'].map((t) => (
                 <Pressable
                   key={t}
                   onPress={() => setMainType(t)}
                   style={[
-                    styles.typeButton,
-                    mainType === t && styles.typeActive,
+                    styles.addTypeBtn,
+                    mainType === t && styles.addTypeBtnActive,
                   ]}
                 >
                   <Text
                     style={[
-                      styles.typeText,
-                      mainType === t && styles.typeTextActive,
+                      styles.addTypeText,
+                      mainType === t && styles.addTypeTextActive,
                     ]}
                   >
                     {t}
@@ -265,283 +297,381 @@ export default function HistoryDetail({ route, navigation }) {
               ))}
             </View>
 
-            {/* 금액 입력 */}
-            <Text style={styles.label}>금액</Text>
-            <TextInput
-              placeholder="예) 200,000"
-              keyboardType="numeric"
-              value={amount}
-              onChangeText={setAmount}
-              style={styles.input}
-            />
-
-            {/* 결제방식 */}
-            {mainType === '지출' && (
-              <>
-                <View style={styles.divider} />
-                <Text style={styles.label}>결제방식</Text>
-                <View style={styles.optionRow}>
-                  {Object.keys(paymentMap).map((opt) => (
-                    <Pressable
-                      key={opt}
-                      onPress={() => setPaymentType(paymentMap[opt])}
-                      style={[
-                        styles.optionTag,
-                        paymentType === paymentMap[opt] && {
-                          backgroundColor: '#000',
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={{
-                          color:
-                            paymentType === paymentMap[opt] ? '#fff' : '#000',
-                          fontWeight: '600',
-                        }}
-                      >
-                        {opt}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </>
-            )}
-
-            {/* 카테고리 */}
-            <View style={styles.divider} />
-            <Text style={styles.label}>
-              카테고리({mainType === '지출' ? '지출' : '수입'})
-            </Text>
-
-            <View style={styles.optionWrap}>
-              {Object.keys(
-                mainType === '지출' ? expenseCategories : incomeCategories
-              ).map((name) => (
-                <Pressable
-                  key={name}
-                  onPress={() => {
-                    setSelectedCategory(name);
-                    setDescription(name); // ✅ 카테고리 클릭 시 description 자동 설정
-                  }}
-                  style={[
-                    styles.optionTag,
-                    selectedCategory === name && { backgroundColor: '#000' },
-                  ]}
-                >
-                  <Text
-                    style={{
-                      color: selectedCategory === name ? '#fff' : '#000',
-                      fontWeight: '600',
-                    }}
-                  >
-                    {name}
-                  </Text>
-                </Pressable>
-              ))}
+            {/* 이름 입력 */}
+            <View style={styles.addInputWrap}>
+              <Text style={styles.addLabel}>이름</Text>
+              <TextInput
+                placeholder="이름을 입력하세요"
+                placeholderTextColor="#8FA7A5"
+                value={description}
+                onChangeText={setDescription}
+                style={styles.addInput}
+              />
             </View>
 
-            {/* 작성 완료 */}
-            <View style={styles.divider} />
+            {/* 금액 입력 */}
+            <View style={styles.addInputWrap}>
+              <Text style={styles.addLabel}>금액</Text>
+              <TextInput
+                placeholder="금액을 입력하세요"
+                placeholderTextColor="#8FA7A5"
+                value={amount}
+                onChangeText={setAmount}
+                keyboardType="numeric"
+                style={styles.addInput}
+              />
+            </View>
+
+            {/* 카테고리 */}
+            <Text style={styles.categoryTitleInModal}>
+              카테고리({mainType === '수입' ? '수입' : '지출'})
+            </Text>
+
+            <View style={styles.categoryTagWrap}>
+              {(mainType === '수입' ? categoryIncome : categoryExpense).map(
+                (name, idx) => (
+                  <Pressable
+                    key={name + idx}
+                    onPress={() => setSelectedCategory(name)}
+                    style={[
+                      styles.categoryTagBtn,
+                      selectedCategory === name && styles.categoryTagBtnActive,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.categoryTagBtnText,
+                        selectedCategory === name &&
+                          styles.categoryTagBtnTextActive,
+                      ]}
+                    >
+                      {name}
+                    </Text>
+                  </Pressable>
+                )
+              )}
+            </View>
+            <Text style={styles.addLabel}>날짜</Text>
+            <Text style={styles.datePreview}>
+              {selectedDate
+                ? dayjs(selectedDate).format('YYYY.MM.DD')
+                : dayjs().format('YYYY.MM.DD')}
+            </Text>
+
+            {/* 완료 버튼 */}
             <Pressable
-              style={styles.submitButton}
               onPress={async () => {
+                if (!canSubmit || submitting) return;
+
                 try {
-                  if (!amount || isNaN(amount)) {
-                    alert('금액을 숫자로 입력하세요.');
-                    return;
-                  }
-                  if (mainType === '지출' && !paymentType) {
-                    alert('결제 방식을 선택하세요.');
-                    return;
-                  }
-                  if (!selectedCategory) {
-                    alert('카테고리를 선택하세요.');
-                    return;
-                  }
+                  setSubmitting(true);
 
                   const payload = {
                     date: selectedDate || dayjs().format('YYYY-MM-DD'),
-                    description: description.trim() || '기타',
+                    description: description.trim(),
                     amount: Number(amount),
                     transactionType: mainType === '지출' ? 'EXPENSE' : 'INCOME',
-                    paymentType:
-                      mainType === '지출' ? paymentType : 'BANK_TRANSFER',
-                    categoryId:
-                      mainType === '지출'
-                        ? expenseCategories[selectedCategory]
-                        : incomeCategories[selectedCategory],
+                    paymentType: 'BANK_TRANSFER',
+                    categoryId: 1,
                   };
 
-                  console.log('📤 요청 데이터:', payload);
                   const res = await AuthService.createExpense(payload);
 
                   if (res.success) {
-                    alert('✅ 내역이 등록되었습니다!');
+                    alert('등록 완료!');
                     setShowAddModal(false);
-                    setAmount('');
                     setDescription('');
-                    setPaymentType(null);
+                    setAmount('');
                     setSelectedCategory(null);
                     await fetchTransactions();
                   } else {
-                    alert('❌ 등록 실패: ' + res.message);
+                    alert('등록 실패: ' + res.message);
                   }
                 } catch (err) {
-                  console.error('등록 에러:', err);
-                  alert('서버와의 통신 중 오류가 발생했습니다.');
+                  alert('오류 발생');
+                } finally {
+                  setSubmitting(false);
                 }
               }}
+              disabled={!canSubmit || submitting}
+              style={[
+                styles.addSubmitBtn,
+                { opacity: !canSubmit || submitting ? 0.5 : 1 },
+              ]}
             >
-              <Text style={styles.submitText}>작성 완료</Text>
+              {submitting ? (
+                <ActivityIndicator color="#BFBFBF" />
+              ) : (
+                <Text style={styles.addSubmitText}>완료</Text>
+              )}
             </Pressable>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
-
-      {/* 하단 탭 */}
-      <View style={styles.bottomTab}>
-        <Pressable style={styles.tabItem} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#000" />
-          <Text style={styles.tabText}>뒤로가기</Text>
-        </Pressable>
-        <Pressable
-          style={styles.tabItem}
-          onPress={() => navigation.navigate('History')}
-        >
-          <Ionicons name="wallet-outline" size={24} color="#000" />
-          <Text style={styles.tabText}>가계부 메인</Text>
-        </Pressable>
-        <Pressable style={styles.tabItem}>
-          <Ionicons name="share-social-outline" size={24} color="#000" />
-          <Text style={styles.tabText}>공유</Text>
-        </Pressable>
-        <Pressable style={styles.tabItem}>
-          <Ionicons name="document-text-outline" size={24} color="#000" />
-          <Text style={styles.tabText}>분석</Text>
-        </Pressable>
-      </View>
     </SafeAreaView>
   );
 }
+const TEXT_MAIN = '#BFBFBF';
+const TEXT_SUB = '#FFFFFF';
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  header: {
+  container: {
+    flex: 1,
+    backgroundColor: '#022326',
+  },
+
+  headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderColor: '#000',
-  },
-  headerTitle: { fontSize: 18, fontWeight: '800' },
-  dateText: { textAlign: 'center', marginTop: 8, fontWeight: '600' },
-  summaryBox: {
-    backgroundColor: '#D9D9D9',
-    padding: 20,
     alignItems: 'center',
-    marginVertical: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
-  balanceText: { fontSize: 22, fontWeight: '800' },
-  subText: { fontSize: 14 },
-  listHeader: {
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#BFBFBF',
+    marginLeft: -300,
+  },
+  headerRight: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    alignItems: 'center',
+    gap: 12,
   },
+  filterBtn: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    backgroundColor: '#123A3E',
+  },
+  filterText: {
+    color: '#CFE8E4',
+    fontSize: 12,
+  },
+
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderColor: '#184346',
+  },
+  dateText: {
+    color: '#CFE8E4',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+
+  summaryBox: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  balanceText: {
+    fontSize: 26,
+    color: '#FFFFFF',
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  summarySub: {
+    color: '#CFE8E4',
+    fontSize: 14,
+    marginTop: 2,
+  },
+
+  tabRow: {
+    flexDirection: 'row',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderColor: '#184346',
+    paddingHorizontal: 20,
+    justifyContent: 'flex-start',
+    gap: 20,
+  },
+  tabText: {
+    color: '#9FB8B3',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  tabActive: {
+    color: '#FFFFFF',
+    borderBottomWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+
   listItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
+    alignItems: 'flex-start',
+    paddingVertical: 14,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#184346',
   },
-  itemTitle: { fontWeight: '600' },
-  itemTime: { fontSize: 12, color: '#777' },
-  itemAmount: { fontWeight: '700' },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalContainer: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 20,
-    minHeight: '75%',
-  },
-  modalTitle: { fontSize: 18, fontWeight: '800', textAlign: 'center' },
-  modalDate: { textAlign: 'center', color: '#555', marginBottom: 10 },
-  rowGroup: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginVertical: 4,
-  },
-  typeButton: {
-    flex: 1,
-    marginHorizontal: 5,
-    paddingVertical: 8,
-    backgroundColor: '#D9D9D9',
-    borderRadius: 6,
-  },
-  typeActive: { backgroundColor: '#000' },
-  typeText: { textAlign: 'center', color: '#000', fontWeight: '700' },
-  typeTextActive: { color: '#fff' },
-  label: { marginTop: 12, fontWeight: '700' },
-  input: {
-    borderBottomWidth: 1,
-    borderColor: '#aaa',
-    paddingVertical: 8,
+  itemTitle: {
+    color: '#FFFFFF',
+    fontWeight: '600',
     fontSize: 15,
   },
-  divider: {
-    borderBottomWidth: 1,
-    borderColor: '#ccc',
-    marginVertical: 10,
+  itemTime: {
+    color: '#9FB8B3',
+    fontSize: 12,
+    marginTop: 2,
   },
-  optionRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 6,
+  itemAmount: {
+    fontSize: 15,
+    fontWeight: '700',
+    marginRight: 10,
   },
-  optionWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 6,
+  noData: {
+    textAlign: 'center',
+    marginTop: 20,
+    color: '#9FB8B3',
   },
-  optionTag: {
-    backgroundColor: '#D9D9D9',
-    borderRadius: 20,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+
+  /* 모달 */
+  addModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
   },
-  submitButton: {
-    backgroundColor: '#000',
-    borderRadius: 10,
-    paddingVertical: 12,
-    marginTop: 10,
+
+  addModalContainer: {
+    backgroundColor: '#063434',
+    paddingVertical: 24,
+    paddingHorizontal: 20,
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
+    minHeight: '75%',
   },
-  submitText: { textAlign: 'center', color: '#fff', fontWeight: '700' },
-  bottomTab: {
+  addModalTitle: {
+    textAlign: 'center',
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 20,
+  },
+
+  addTypeRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
+    marginBottom: 20,
+  },
+  addTypeBtn: {
+    borderWidth: 1,
+    borderColor: '#A2BAB4',
+    paddingVertical: 6,
+    paddingHorizontal: 18,
+    borderRadius: 8,
+  },
+  addTypeBtnActive: {
+    backgroundColor: '#1FBF74',
+    borderColor: '#1FBF74',
+  },
+  addTypeText: {
+    color: '#CFE8E4',
+    fontWeight: '600',
+  },
+  addTypeTextActive: {
+    color: '#0B2A2D',
+    fontWeight: '700',
+  },
+
+  addInputWrap: { marginBottom: 18 },
+  addLabel: {
+    color: '#CFE8E4',
+    fontSize: 14,
+    marginBottom: 6,
+    fontWeight: '600',
+  },
+  addInput: {
+    borderBottomWidth: 1,
+    borderColor: '#42605F',
+    color: '#FFFFFF',
+    paddingVertical: 6,
+    fontSize: 15,
+  },
+
+  categoryTitleInModal: {
+    textAlign: 'center',
+    color: '#FFFFFF',
+    fontSize: 15,
+    marginVertical: 14,
+    fontWeight: '700',
+  },
+
+  categoryTagWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 22,
+  },
+
+  categoryTagBtn: {
+    borderWidth: 1,
+    borderColor: '#8AA7A2',
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 18,
+  },
+  categoryTagBtnActive: {
+    backgroundColor: '#1FBF74',
+    borderColor: '#1FBF74',
+  },
+  categoryTagBtnText: {
+    color: '#CFE8E4',
+    fontWeight: '600',
+  },
+  categoryTagBtnTextActive: {
+    color: '#0B2A2D',
+    fontWeight: '700',
+  },
+
+  datePreview: {
+    textAlign: 'center',
+    color: '#FFFFFF',
+    marginBottom: 12,
+  },
+
+  addSubmitBtn: {
+    marginTop: 30,
+    backgroundColor: '#035951',
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: 'center',
-    height: 70,
-    backgroundColor: '#fff',
-    borderWidth: 2,
-    borderColor: '#000',
-    borderRadius: 20,
-    marginHorizontal: 10,
-    marginBottom: 10,
+  },
+
+  addSubmitText: {
+    color: '#BFBFBF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+
+  bottomTab: {
     position: 'absolute',
-    bottom: 0,
     left: 0,
     right: 0,
+    bottom: 0,
+    height: 68,
+    paddingBottom: 8,
+    paddingTop: 6,
+    backgroundColor: '#061D1D',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-end',
   },
-  tabItem: { alignItems: 'center', flex: 1 },
-  tabText: { marginTop: 4, fontSize: 13, fontWeight: '700', color: '#000' },
+  tabItem: {
+    alignItems: 'center',
+  },
+  tabLabel: {
+    marginTop: 2,
+    fontSize: 11,
+    color: TEXT_SUB,
+  },
+  tabLabelActive: {
+    marginTop: 2,
+    fontSize: 11,
+    color: TEXT_MAIN,
+    fontWeight: '700',
+  },
 });

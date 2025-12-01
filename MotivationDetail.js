@@ -10,6 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+
 import { useRoute, useNavigation } from '@react-navigation/native';
 import AuthService from './AuthService';
 
