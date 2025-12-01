@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   SafeAreaView,
+  ActivityIndicator,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import dayjs from 'dayjs';
@@ -23,6 +24,16 @@ export default function AssetAdd({ navigation }) {
   const [date, setDate] = useState(dayjs().format('YYYY-MM-DD'));
 
   const [selectedType, setSelectedType] = useState('CASH');
+  const [submitting, setSubmitting] = useState(false);
+
+  const canSubmit =
+    selectedType === 'CASH' || selectedType === 'BANK'
+      ? name.trim() && amount && !isNaN(amount)
+      : name.trim() &&
+        quantity &&
+        avgPrice &&
+        !isNaN(quantity) &&
+        !isNaN(avgPrice);
 
   // 자산 종류
   const assetTypes = [
@@ -33,37 +44,29 @@ export default function AssetAdd({ navigation }) {
   ];
 
   const onSubmit = async () => {
+    if (!canSubmit) return;
+
+    setSubmitting(true);
+
     if (!name.trim()) return alert('이름을 입력하세요.');
 
-    // ❗ 종류별 유효성 검사
     if (selectedType === 'CASH' || selectedType === 'BANK') {
-      if (!amount || isNaN(amount)) return alert('금액을 입력하세요.');
-    } else {
-      if (!quantity || isNaN(quantity)) return alert('수량을 입력하세요.');
-      if (!avgPrice || isNaN(avgPrice)) return alert('평균 가격을 입력하세요.');
-    }
-
-    let payload = {};
-
-    if (selectedType === 'CASH' || selectedType === 'BANK') {
-      // ------------------------ 💰 현금·은행 전송 ------------------------
-      payload = {
+      const payload = {
         type: selectedType,
         name: name.trim(),
         amount: Number(amount),
         date,
       };
 
-      console.log('🔥 liquid asset payload:', payload);
       const res = await AuthService.createLiquidAsset(payload);
+      setSubmitting(false);
 
       if (res.success) {
         alert('자산 등록 완료!');
         navigation.goBack();
       } else alert(res.message || '등록 실패');
     } else {
-      // ------------------------ 📈 코인·주식 전송 ------------------------
-      payload = {
+      const payload = {
         type: selectedType,
         name: name.trim(),
         quantity: Number(quantity),
@@ -71,8 +74,8 @@ export default function AssetAdd({ navigation }) {
         date,
       };
 
-      console.log('🔥 investment asset payload:', payload);
       const res = await AuthService.createInvestment(payload);
+      setSubmitting(false);
 
       if (res.success) {
         alert('자산 등록 완료!');
@@ -187,8 +190,19 @@ export default function AssetAdd({ navigation }) {
         </View>
 
         {/* 완료 버튼 */}
-        <Pressable style={styles.doneBtn} onPress={onSubmit}>
-          <Text style={styles.doneText}>완료</Text>
+        <Pressable
+          style={[
+            styles.submitBtn,
+            { opacity: !canSubmit || submitting ? 0.5 : 1 },
+          ]}
+          onPress={onSubmit}
+          disabled={!canSubmit || submitting}
+        >
+          {submitting ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.submitText}>완료</Text>
+          )}
         </Pressable>
       </ScrollView>
     </SafeAreaView>
@@ -262,16 +276,16 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  doneBtn: {
-    backgroundColor: '#CFE8E4',
+  submitBtn: {
+    marginTop: 30,
+    backgroundColor: '#035951',
     paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
     marginHorizontal: 24,
-    borderRadius: 10,
-    marginBottom: 40,
   },
-  doneText: {
-    textAlign: 'center',
-    color: '#022326',
+  submitText: {
+    color: '#BFBFBF',
     fontSize: 16,
     fontWeight: '700',
   },
