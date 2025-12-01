@@ -204,7 +204,7 @@ const AuthService = {
     }
   },
   /** 목표 생성 (사진 포함) */
-  async createGoal({ title, targetAmount, deadline, imageUrl }) {
+  async createGoal({ title, targetAmount, deadline, startDate, imageUrl }) {
     try {
       const token = await AsyncStorage.getItem(TOKEN_KEY);
       if (!token) {
@@ -231,6 +231,7 @@ const AuthService = {
       // 🔹 다른 데이터들
       formData.append('title', title);
       formData.append('targetAmount', String(targetAmount));
+      formData.append('startDate', startDate);
       formData.append('deadline', deadline);
 
       // 🔹 서버 요청

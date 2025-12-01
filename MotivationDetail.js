@@ -128,7 +128,9 @@ export default function MotivationDetail() {
         </View>
 
         <View style={styles.limitBox}>
-          <Text style={styles.sectionTitle}>제한 기간 : {goal.deadline}</Text>
+          <Text style={styles.sectionTitle}>
+            기간 : {goal.startDate} ~ {goal.deadline}
+          </Text>
         </View>
       </ScrollView>
     </View>

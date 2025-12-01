@@ -95,11 +95,6 @@ export default function AddMotivation({ navigation }) {
     }
   };
 
-  // 미리보기/이미지 선택은 API 받으면 연결됨
-  const handleImageSelect = () => {
-    Alert.alert('추가 예정', '사진 업로드 API 받으면 연결할게!');
-  };
-
   const handleSubmit = async () => {
     if (!canSubmit || submitting) return;
 
@@ -109,6 +104,7 @@ export default function AddMotivation({ navigation }) {
       title,
       imageUrl: imageUri,
       targetAmount: Number(price),
+      startDate: startDate,
       deadline: endDate,
     };
 
