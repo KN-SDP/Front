@@ -10,7 +10,6 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
-
 import AuthService from './AuthService';
 
 dayjs.locale('ko');
@@ -19,7 +18,6 @@ export default function History({ navigation }) {
   const [baseDate, setBaseDate] = useState(dayjs());
   const [mode, setMode] = useState('day');
 
-  // 요약 데이터 상태
   const [daySummary, setDaySummary] = useState({});
   const [monthSummary, setMonthSummary] = useState({});
   const [yearSummary, setYearSummary] = useState({
@@ -28,7 +26,6 @@ export default function History({ navigation }) {
     total: 0,
   });
 
-  // 월별 카드에서 사용되는 getter
   const getMonthStats = (month) => {
     const data = monthSummary[month];
     if (!data) return { income: 0, expense: 0, total: 0 };
@@ -39,7 +36,6 @@ export default function History({ navigation }) {
     };
   };
 
-  // 🔥 올해 전체 합계 계산
   const loadYearSummary = () => {
     let totalIncome = 0;
     let totalExpense = 0;
@@ -56,7 +52,6 @@ export default function History({ navigation }) {
     });
   };
 
-  // 🔥 월별 요약
   const loadMonthSummary = async (year) => {
     try {
       const promises = [];
@@ -88,14 +83,12 @@ export default function History({ navigation }) {
           summary[month] = { income: 0, expense: 0, total: 0 };
         }
       }
-
       setMonthSummary(summary);
     } catch (err) {
       console.error('❌ loadMonthSummary Error:', err);
     }
   };
 
-  // 🔥 일별 요약 (이번 주)
   const loadDaySummary = async (year, month, daysOfWeek) => {
     const res = await AuthService.getLedgerByMonth(year, month);
     const data = res.success ? res.data : [];
@@ -120,8 +113,6 @@ export default function History({ navigation }) {
 
     setDaySummary(summary);
   };
-
-  // ============= 날짜 계산 =============
 
   const moveWeek = useCallback((offset) => {
     setBaseDate((prev) => prev.add(offset, 'week'));
@@ -150,7 +141,6 @@ export default function History({ navigation }) {
   const weekRange = useMemo(() => getWeekRange(baseDate), [baseDate]);
   const weekInfo = useMemo(() => getWeekInfo(baseDate), [baseDate]);
 
-  // 🔥 daysOfWeek는 반드시 useEffect보다 위에 있어야 함!
   const daysOfWeek = useMemo(() => {
     const arr = [];
     for (let i = 0; i < 7; i++) {
@@ -168,9 +158,7 @@ export default function History({ navigation }) {
     for (let i = 1; i <= 12; i++) arr.push({ key: i, label: `${i}월` });
     return arr;
   }, []);
-  // ============= 날짜 계산 끝 → 여기까지 위로!! ==========
 
-  // 🔥 전체 로드 (월 요약만 불러옴)
   const loadAllSummaries = async () => {
     const year = baseDate.year();
     await loadMonthSummary(year);
@@ -178,61 +166,38 @@ export default function History({ navigation }) {
 
   useEffect(() => {
     const unsub = navigation.addListener('focus', () => {
-      loadAllSummaries(); // 월 요약 다시 불러오기
-
-      // 🔥 추가!!
+      loadAllSummaries();
       const year = baseDate.year();
       const month = baseDate.month() + 1;
-      loadDaySummary(year, month, daysOfWeek); // 일 요약 갱신
+      loadDaySummary(year, month, daysOfWeek);
     });
-
     return unsub;
   }, [baseDate, daysOfWeek]);
 
-  // 월 요약이 바뀌면 연도 총합 갱신
   useEffect(() => {
     loadYearSummary(monthSummary);
   }, [monthSummary]);
+  useEffect(() => {
+    loadAllSummaries();
+  }, [baseDate]);
 
-  // 🔥 NEW: daysOfWeek가 바뀌면 일별 요약 다시 로드 (핵심)
   useEffect(() => {
     const year = baseDate.year();
     const month = baseDate.month() + 1;
-
-    if (daysOfWeek.length > 0) {
-      loadDaySummary(year, month, daysOfWeek);
-    }
+    if (daysOfWeek.length > 0) loadDaySummary(year, month, daysOfWeek);
   }, [daysOfWeek]);
 
-  // ============= 렌더 =============
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={24} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Smart Ledger</Text>
-        <View style={{ width: 24 }} />
-      </View>
-
-      {/* 상단 옵션 */}
-      <View style={styles.subHeader}>
-        <Pressable
-          onPress={() => (mode === 'day' ? moveWeek(-1) : moveYear(-1))}
-        >
-          <Ionicons name="chevron-back-outline" size={20} />
+      {/* Header — 내역 + 우측 상단 토글 */}
+      <View style={styles.headerRow}>
+        <Pressable onPress={() => navigation.navigate('Home')}>
+          <Ionicons name="chevron-back" size={26} color="#BFBFBF" />
         </Pressable>
 
-        <Text style={styles.subHeaderText}>
-          {mode === 'day'
-            ? `${weekInfo.year}년 ${weekInfo.month}월 ${weekInfo.weekOfMonth}주차`
-            : `${year}년`}
-        </Text>
+        <Text style={styles.headerTitle}>내역</Text>
 
-        <Pressable onPress={() => (mode === 'day' ? moveWeek(1) : moveYear(1))}>
-          <Ionicons name="chevron-forward-outline" size={20} />
-        </Pressable>
-
+        {/* 🔥 오른쪽 상단 토글 */}
         <View style={styles.modeButtons}>
           <Pressable
             onPress={() => setMode('day')}
@@ -247,7 +212,7 @@ export default function History({ navigation }) {
                 mode === 'day' && styles.modeButtonTextActive,
               ]}
             >
-              일별
+              주별
             </Text>
           </Pressable>
 
@@ -270,39 +235,52 @@ export default function History({ navigation }) {
         </View>
       </View>
 
-      {/* 월별 */}
+      {/* 두 번째 줄 — 날짜 + 화살표 */}
+      <View style={styles.dateRow}>
+        <Pressable
+          onPress={() => (mode === 'day' ? moveWeek(-1) : moveYear(-1))}
+          style={styles.arrowArea}
+        >
+          <Ionicons name="chevron-back-outline" size={22} color="#CFE8E4" />
+        </Pressable>
+
+        <Text style={styles.dateText}>
+          {mode === 'day'
+            ? `${weekRange.startOfWeek.format(
+                'YYYY.MM.DD'
+              )}~${weekRange.endOfWeek.format('YYYY.MM.DD')}`
+            : `${year}년`}
+        </Text>
+
+        <Pressable
+          onPress={() => (mode === 'day' ? moveWeek(1) : moveYear(1))}
+          style={styles.arrowArea}
+        >
+          <Ionicons name="chevron-forward-outline" size={22} color="#CFE8E4" />
+        </Pressable>
+      </View>
+
+      {/* Month View */}
       {mode === 'month' && (
         <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
-          {/* 연도합계 */}
-          <View style={styles.summaryCard}>
-            <Text style={styles.cardTitle}>{year}년 전체</Text>
-            <Text style={styles.cardText}>
+          <View style={styles.yearCard}>
+            <Text style={styles.yearTitle}>{year}년 전체</Text>
+            <Text style={styles.yearText}>
               수입: {yearSummary.income.toLocaleString()}원
             </Text>
-            <Text style={styles.cardText}>
+            <Text style={styles.yearText}>
               지출: {yearSummary.expense.toLocaleString()}원
             </Text>
-            <Text style={styles.cardText}>
+            <Text style={styles.yearText}>
               합계: {yearSummary.total.toLocaleString()}원
             </Text>
           </View>
 
-          {/* 월 grid */}
           <View style={styles.monthGrid}>
             {months.map((m) => {
               const stats = getMonthStats(m.key);
-
               return (
-                <Pressable
-                  key={m.key}
-                  style={styles.monthBox}
-                  onPress={() =>
-                    navigation.navigate('HistoryDetail', {
-                      selectedMonth: m.key,
-                      selectedYear: year,
-                    })
-                  }
-                >
+                <View key={m.key} style={styles.monthBox}>
                   <Text style={styles.monthLabel}>{m.label}</Text>
                   <Text style={styles.totalText}>
                     합계: {stats.total.toLocaleString()}원
@@ -313,161 +291,263 @@ export default function History({ navigation }) {
                   <Text style={styles.expenseText}>
                     지출: {stats.expense.toLocaleString()}
                   </Text>
-                </Pressable>
+                </View>
               );
             })}
           </View>
         </ScrollView>
       )}
 
-      {/* 일별 */}
+      {/* Day View */}
       {mode === 'day' && (
-        <ScrollView
-          contentContainerStyle={styles.scrollContainer}
-          showsVerticalScrollIndicator={false}
-        >
+        <ScrollView contentContainerStyle={styles.dayContainer}>
           {daysOfWeek.map((d) => (
             <Pressable
               key={d.key}
-              style={styles.card}
+              style={styles.dayCard}
               onPress={() =>
                 navigation.navigate('HistoryDetail', { selectedDate: d.key })
               }
             >
-              <Text style={styles.cardTitle}>{d.label}</Text>
-              <Text style={styles.cardText}>
-                수입: {daySummary[d.key]?.income?.toLocaleString() ?? 0}원
-              </Text>
-              <Text style={styles.cardText}>
-                지출: {daySummary[d.key]?.expense?.toLocaleString() ?? 0}원
-              </Text>
-              <Text style={styles.cardText}>
-                합계: {daySummary[d.key]?.total?.toLocaleString() ?? 0}원
-              </Text>
+              <View style={styles.cardRow}>
+                <Ionicons name="logo-usd" size={26} color="#1FBF74" />
+                <View style={{ marginLeft: 8 }}>
+                  <Text
+                    style={[
+                      styles.dayLabel,
+                      d.label.includes('(일)') && { color: '#FF6A6A' },
+                    ]}
+                  >
+                    {d.label}
+                  </Text>
+
+                  <Text style={styles.cardText}>
+                    수입 : {daySummary[d.key]?.income?.toLocaleString() ?? 0}원
+                  </Text>
+                  <Text style={styles.cardText}>
+                    지출 : {daySummary[d.key]?.expense?.toLocaleString() ?? 0}원
+                  </Text>
+                  <Text style={styles.cardText}>
+                    합계 : {daySummary[d.key]?.total?.toLocaleString() ?? 0}원
+                  </Text>
+                </View>
+              </View>
             </Pressable>
           ))}
         </ScrollView>
       )}
 
-      {/* 하단 탭 */}
-      <View style={styles.bottomTab}>
-        <Pressable style={styles.tabItem} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} />
-          <Text style={styles.tabText}>뒤로가기</Text>
+      {/* 하단 탭바 */}
+      <View style={styles.tabBar}>
+        <Pressable
+          onPress={() => navigation.navigate('Home')}
+          style={styles.tabItem}
+        >
+          <Ionicons name="home" size={22} color="#F4F8F7" />
+          <Text style={styles.tabLabelActive}>메인</Text>
         </Pressable>
 
-        <Pressable style={styles.tabItem}>
-          <Ionicons name="wallet-outline" size={24} />
-          <Text style={styles.tabText}>가계부 메인</Text>
+        <Pressable
+          onPress={() => navigation.navigate('Motivation')}
+          style={styles.tabItem}
+        >
+          <Ionicons name="heart" size={22} color="#9FB8B3" />
+          <Text style={styles.tabLabel}>목표</Text>
         </Pressable>
 
-        <Pressable style={styles.tabItem}>
-          <Ionicons name="share-social-outline" size={24} />
-          <Text style={styles.tabText}>공유</Text>
+        <Pressable
+          onPress={() => navigation.navigate('History')}
+          style={styles.tabItem}
+        >
+          <Ionicons name="stats-chart" size={22} color="#9FB8B3" />
+          <Text style={styles.tabLabel}>내역</Text>
         </Pressable>
 
-        <Pressable style={styles.tabItem}>
-          <Ionicons name="document-text-outline" size={24} />
-          <Text style={styles.tabText}>분석</Text>
+        <Pressable
+          onPress={() => navigation.navigate('Assets')}
+          style={styles.tabItem}
+        >
+          <Ionicons name="wallet-outline" size={22} color="#9FB8B3" />
+          <Text style={styles.tabLabel}>자산</Text>
         </Pressable>
       </View>
     </SafeAreaView>
   );
 }
+const TEXT_MAIN = '#BFBFBF';
+const TEXT_SUB = '#FFFFFF';
 
 const styles = StyleSheet.create({
-  /* 기존 너 코드 그대로 유지됨 */
-  container: { flex: 1, backgroundColor: '#fff' },
-  header: {
+  container: {
+    flex: 1,
+    backgroundColor: '#022326',
+  },
+  /* 첫 줄: 내역 + 토글 */
+  headerRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderColor: '#000',
+    paddingVertical: 14,
   },
-  headerTitle: { fontSize: 18, fontWeight: '800' },
-  subHeader: {
+
+  headerTitle: {
+    color: '#BFBFBF',
+    fontSize: 18,
+    fontWeight: '700',
+    marginLeft: -200,
+  },
+
+  /* 날짜 줄 */
+  dateRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderColor: '#000',
+    borderColor: '#184346',
   },
-  subHeaderText: { fontSize: 16, fontWeight: '700', marginHorizontal: 8 },
 
+  dateText: {
+    flex: 1,
+    textAlign: 'center',
+    color: '#CFE8E4',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+
+  arrowArea: {
+    width: 150,
+    alignItems: 'center',
+  },
+
+  /* 우측 토글 버튼 */
   modeButtons: {
     flexDirection: 'row',
-    marginLeft: 10,
-    borderWidth: 1,
-    borderColor: '#000',
-    borderRadius: 8,
-    overflow: 'hidden',
+    backgroundColor: '#123A3E',
+    padding: 4,
+    borderRadius: 20,
   },
+
   modeButton: {
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    backgroundColor: '#f0f0f0',
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 16,
   },
-  modeButtonActive: { backgroundColor: '#000' },
-  modeButtonText: { color: '#000', fontWeight: '700' },
-  modeButtonTextActive: { color: '#fff' },
+
+  modeButtonActive: {
+    backgroundColor: '#1FBF74',
+  },
+
+  modeButtonText: {
+    color: '#A0AFAF',
+    fontWeight: '700',
+  },
+
+  modeButtonTextActive: {
+    color: '#0B2A2D',
+  },
+
+  /* Month */
+  yearCard: {
+    backgroundColor: '#134246',
+    padding: 16,
+    borderRadius: 14,
+    marginHorizontal: 16,
+    marginTop: 16,
+  },
+  yearTitle: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 16,
+    marginBottom: 6,
+  },
+  yearText: {
+    color: '#CFE8E4',
+    fontSize: 14,
+  },
 
   monthGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
+    paddingTop: 10,
   },
   monthBox: {
-    backgroundColor: '#D9D9D9',
-    borderRadius: 16,
     width: '30%',
-    aspectRatio: 0.7,
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: '#134246',
+    borderRadius: 16,
+    padding: 12,
     marginBottom: 14,
   },
-  monthLabel: { fontWeight: '700', marginBottom: 4 },
-  totalText: { fontSize: 13, fontWeight: '700' },
-  incomeText: { fontSize: 11, color: '#007AFF' },
-  expenseText: { fontSize: 11, color: '#FF3B30' },
+  monthLabel: {
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 4,
+    fontSize: 15,
+  },
+  totalText: { fontWeight: '700', color: '#CFE8E4' },
+  incomeText: { color: '#8DD9C4', fontSize: 12, marginTop: 4 },
+  expenseText: { color: '#FF8A85', fontSize: 12 },
 
-  scrollContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+  /* Day mode */
+  dayContainer: {
     paddingHorizontal: 16,
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
-  card: {
-    backgroundColor: '#D9D9D9',
-    borderRadius: 16,
-    width: '48%',
+  dayCard: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 18,
     padding: 16,
-    marginBottom: 12,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: '#1D4F52',
   },
-  cardTitle: { fontWeight: '700', fontSize: 15, marginBottom: 6 },
-  cardText: { fontSize: 14, marginVertical: 2 },
-
-  bottomTab: {
+  cardRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    height: 70,
-    backgroundColor: '#fff',
-    borderWidth: 2,
-    borderColor: '#000',
-    borderRadius: 20,
-    marginHorizontal: 10,
-    marginBottom: 10,
+    alignItems: 'flex-start',
+  },
+  dayLabel: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  cardText: {
+    color: '#CFE8E4',
+    fontSize: 13,
+    marginTop: 2,
+  },
+
+  /******** Tab bar ********/
+  tabBar: {
     position: 'absolute',
-    bottom: 0,
     left: 0,
     right: 0,
+    bottom: 0,
+    height: 68,
+    paddingBottom: 8,
+    paddingTop: 6,
+    backgroundColor: '#061D1D', // 진한 다크그린
+    borderTopWidth: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-end',
   },
-  tabItem: { alignItems: 'center', justifyContent: 'center', flex: 1 },
-  tabText: { marginTop: 4, fontSize: 13, fontWeight: '700' },
+  tabItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabLabel: {
+    marginTop: 2,
+    fontSize: 11,
+    color: TEXT_SUB,
+  },
+  tabLabelActive: {
+    marginTop: 2,
+    fontSize: 11,
+    color: TEXT_MAIN,
+    fontWeight: '700',
+  },
 });
