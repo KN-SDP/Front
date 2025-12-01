@@ -38,6 +38,17 @@ export default function HistoryDetail({ route, navigation }) {
   const [selectedTab, setSelectedTab] = useState('전체');
   const [submitting, setSubmitting] = useState(false);
 
+  const [goals, setGoals] = useState([]);
+  const [selectedGoalId, setSelectedGoalId] = useState(null);
+
+  useEffect(() => {
+    if (mainType === '저축') {
+      AuthService.getGoals().then((res) => {
+        if (res.success) setGoals(res.data);
+      });
+    }
+  }, [mainType]);
+
   const canSubmit =
     description.trim() && amount && !isNaN(amount) && selectedCategory;
 
@@ -376,6 +387,42 @@ export default function HistoryDetail({ route, navigation }) {
                 </Pressable>
               ))}
             </View>
+            {mainType === '저축' && (
+              <View style={{ marginTop: 20 }}>
+                <Text style={styles.addLabel}>나의 목표에 저축 (선택)</Text>
+
+                {goals.length === 0 ? (
+                  <Text style={{ color: '#ccc', marginTop: 10 }}>
+                    아직 목표가 없습니다.
+                  </Text>
+                ) : (
+                  goals.map((goal) => {
+                    const id = Number(goal.goalId); // ← 숫자로 변환
+                    const keyValue = String(goal.goalId); // ← key는 문자열로 고유하게
+
+                    return (
+                      <Pressable
+                        key={keyValue}
+                        style={styles.goalOption}
+                        onPress={() =>
+                          setSelectedGoalId((prev) => (prev === id ? null : id))
+                        }
+                      >
+                        <View
+                          style={[
+                            styles.radioCircle,
+                            selectedGoalId === id && styles.radioCircleActive,
+                          ]}
+                        />
+                        <Text style={styles.goalOptionText}>
+                          {goal.title} / {goal.targetAmount.toLocaleString()}원
+                        </Text>
+                      </Pressable>
+                    );
+                  })
+                )}
+              </View>
+            )}
 
             <Text style={styles.addLabel}>날짜</Text>
             <Text style={styles.datePreview}>
@@ -394,11 +441,19 @@ export default function HistoryDetail({ route, navigation }) {
 
                   const payload = {
                     date: selectedDate || dayjs().format('YYYY-MM-DD'),
-                    description: description.trim(),
+                    description:
+                      mainType === '저축'
+                        ? `목표 ${
+                            goals.find(
+                              (g) => Number(g.goalId) === Number(selectedGoalId)
+                            )?.title || ''
+                          }`
+                        : description.trim(),
                     amount: Number(amount),
                     transactionType: getTransactionType(),
                     paymentType: 'BANK_TRANSFER',
                     categoryId: selectedCategory.id,
+                    goalId: mainType === '저축' ? Number(selectedGoalId) : null,
                   };
 
                   const res = await AuthService.createExpense(payload);
@@ -700,5 +755,26 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: TEXT_MAIN,
     fontWeight: '700',
+  },
+  goalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    gap: 10,
+  },
+  goalOptionText: {
+    color: '#CFE8E4',
+    fontSize: 14,
+  },
+  radioCircle: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#6DC2B3',
+  },
+  radioCircleActive: {
+    backgroundColor: '#6DC2B3',
   },
 });

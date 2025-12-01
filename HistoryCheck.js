@@ -36,6 +36,7 @@ export default function HistoryCheck({ route, navigation }) {
       setLoading(false);
     }
   };
+
   const handleDelete = async () => {
     try {
       const res = await AuthService.deleteLedger(ledgerId);
@@ -75,6 +76,25 @@ export default function HistoryCheck({ route, navigation }) {
   // 값 분리
   const { date, description, amount, type, category } = detail;
 
+  // 🔥 타입별 텍스트 표시
+  const typeLabel =
+    type === 'INCOME'
+      ? '수입'
+      : type === 'EXPENSE'
+      ? '지출'
+      : type === 'SAVING'
+      ? '저축'
+      : '기타';
+
+  // 🔥 타입별 금액 prefix
+  const prefix = type === 'INCOME' ? '+' : '-';
+
+  // 🔥 타입별 색상
+  const amountColor =
+    type === 'INCOME'
+      ? '#50E3C2' // 초록
+      : '#FF7A7A'; // 지출/저축 모두 빨강
+
   return (
     <View style={styles.container}>
       {/* 헤더 */}
@@ -83,36 +103,31 @@ export default function HistoryCheck({ route, navigation }) {
           <Ionicons name="chevron-back" size={26} color="#CFE8E4" />
         </Pressable>
 
-        <View style={{ flexDirection: 'row', gap: 10 }}>
-          <Pressable style={styles.deleteBtn} onPress={handleDelete}>
-            <Text style={styles.deleteText}>삭제</Text>
-          </Pressable>
-        </View>
+        <Pressable style={styles.deleteBtn} onPress={handleDelete}>
+          <Text style={styles.deleteText}>삭제</Text>
+        </Pressable>
       </View>
 
-      {/* 기본 정보 */}
-      <Text style={styles.typeText}>
-        {type === 'EXPENSE' ? '지출' : '수입'}
-      </Text>
+      {/* 타입 */}
+      <Text style={styles.typeText}>{typeLabel}</Text>
 
+      {/* 날짜 */}
       <Text style={styles.dateText}>
         {dayjs(date).format('YYYY - MM - DD')}
       </Text>
 
+      {/* 제목 */}
       <Text style={styles.titleText}>{description}</Text>
 
-      <Text
-        style={[
-          styles.amountText,
-          type === 'EXPENSE' ? { color: '#FF7A7A' } : { color: '#50E3C2' },
-        ]}
-      >
-        {type === 'EXPENSE' ? '-' : '+'}
+      {/* 금액 */}
+      <Text style={[styles.amountText, { color: amountColor }]}>
+        {prefix}
         {amount.toLocaleString()}원
       </Text>
 
       <View style={styles.line} />
 
+      {/* 카테고리 */}
       <View style={styles.infoBox}>
         <Text style={styles.infoLabel}>카테고리 :</Text>
         <Text style={styles.infoValue}>{category}</Text>
@@ -140,18 +155,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 30,
-  },
-
-  editBtn: {
-    borderWidth: 1,
-    borderColor: '#7CC4BC',
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-  },
-  editText: {
-    color: '#7CC4BC',
-    fontWeight: '600',
   },
 
   deleteBtn: {

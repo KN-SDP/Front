@@ -10,8 +10,11 @@ import {
   Platform,
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-
-import { useRoute, useNavigation } from '@react-navigation/native';
+import {
+  useRoute,
+  useNavigation,
+  useIsFocused,
+} from '@react-navigation/native';
 import AuthService from './AuthService';
 
 const showAlert = (title, message) => {
@@ -41,10 +44,17 @@ export default function MotivationDetail() {
   const goalId = params?.goalId;
 
   const [goal, setGoal] = useState(null);
-  const route = useRoute();
-  const updated = route.params?.updated;
 
-  // 상세 불러오기
+  const isFocused = useIsFocused();
+
+  // 🔥 화면이 다시 Focus될 때마다 최신 데이터 불러오기 (딱 1개만 실행)
+  useEffect(() => {
+    if (isFocused) {
+      loadDetail();
+    }
+  }, [isFocused]);
+
+  // 상세 조회
   const loadDetail = async () => {
     if (!goalId) {
       showAlert('오류', '목표 정보가 없습니다.');
@@ -70,17 +80,13 @@ export default function MotivationDetail() {
     });
   };
 
-  useEffect(() => {
-    loadDetail();
-  }, [updated]);
-
   if (!goal) return null;
 
   const percent = Math.round((goal.progressRate || 0) * 100);
 
   return (
     <View style={styles.container}>
-      {/* ============ 헤더는 ScrollView 밖 ============ */}
+      {/* ===== 헤더 ===== */}
       <View style={styles.header}>
         <Pressable onPress={() => navigation.navigate('Motivation')}>
           <Ionicons name="chevron-back" size={26} color="#BFBFBF" />
@@ -100,7 +106,7 @@ export default function MotivationDetail() {
         </View>
       </View>
 
-      {/* ============ 내용만 ScrollView ============ */}
+      {/* ===== 내용 ===== */}
       <ScrollView style={{ flex: 1 }}>
         <Image
           source={{ uri: goal.imageUrl }}
