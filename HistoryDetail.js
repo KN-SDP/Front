@@ -18,6 +18,10 @@ dayjs.locale('ko');
 
 export default function HistoryDetail({ route, navigation }) {
   const { selectedDate, selectedMonth, selectedYear } = route.params || {};
+  const today = dayjs();
+
+  const year = selectedYear || today.year();
+  const month = selectedMonth || today.month() + 1;
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [mainType, setMainType] = useState('지출');
@@ -62,7 +66,7 @@ export default function HistoryDetail({ route, navigation }) {
 
   const dateText = selectedDate
     ? dayjs(selectedDate).format('YYYY년 M월 D일 dddd')
-    : `${selectedYear}년 ${selectedMonth}월`;
+    : `${year}년 ${month}월`;
 
   // ✅ 거래내역 가져오기
   const fetchTransactions = async () => {
@@ -83,15 +87,10 @@ export default function HistoryDetail({ route, navigation }) {
         return;
       }
 
-      // 🟧 2) 월 기반 조회 (월별)
-      if (selectedMonth && selectedYear) {
-        const res = await AuthService.getLedgerByMonth(
-          selectedYear,
-          selectedMonth
-        );
-        setTransactions(res.data || []);
-        return;
-      }
+      // 🟧 2) 월 기반 조회 (월별, fallback 적용)
+      const res = await AuthService.getLedgerByMonth(year, month);
+      setTransactions(res.data || []);
+      return;
 
       // 🟥 3) fallback (should never happen)
       setTransactions([]);

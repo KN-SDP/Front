@@ -448,6 +448,21 @@ export default function Home({ navigation }) {
                   style={styles.sidebarRow}
                   onPress={() => {
                     toggleSidebar();
+
+                    // 🔥 가계부 추가하기 버튼만 HistoryDetail + 날짜 전달
+                    if (item.isAdd) {
+                      const now = new Date();
+                      const year = now.getFullYear();
+                      const month = now.getMonth() + 1;
+
+                      navigation.navigate('HistoryDetail', {
+                        selectedYear: year,
+                        selectedMonth: month,
+                      });
+                      return;
+                    }
+
+                    // 🔥 나머지는 원래 route 그대로 이동
                     navigation.navigate(item.route);
                   }}
                 >
