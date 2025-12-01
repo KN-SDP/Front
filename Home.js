@@ -438,10 +438,6 @@ export default function Home({ navigation }) {
                 { label: '월별 가계부 보기', route: 'History' },
                 { label: '일별 가계부 보기', route: 'History' },
                 { label: '가계부 추가하기', route: 'HistoryDetail' },
-                {
-                  label: '카테고리별 가계부 조회하기',
-                  route: 'CategoryLedger',
-                },
               ].map((item, idx) => (
                 <Pressable
                   key={idx}

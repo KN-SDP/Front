@@ -685,6 +685,63 @@ const AuthService = {
       };
     }
   },
+  // 🔹 자산 요약 조회
+  async getAssetSummary() {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      if (!token) return { success: false, message: '로그인이 필요합니다.' };
+
+      const res = await api.get('/assets/summary', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      return { success: true, data: res.data };
+    } catch (err) {
+      console.log('❌ getAssetSummary Error:', err.response?.data);
+
+      return { success: false, data: null };
+    }
+  },
+  // 자산 투자 등록 (Coin, Stock)
+  async createInvestment(data) {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      if (!token) return { success: false, message: '로그인이 필요합니다.' };
+
+      const res = await api.post('/assets/investment', data, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      return { success: true, data: res.data };
+    } catch (err) {
+      console.log('❌ createInvestment Error:', err.response?.data);
+
+      const status = err.response?.data?.status_code;
+      const message = err.response?.data?.message || '오류가 발생했습니다.';
+
+      return { success: false, status, message };
+    }
+  },
+  // 💰 현금 / 은행 자산 등록
+  async createLiquidAsset(data) {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      if (!token) return { success: false, message: '로그인이 필요합니다.' };
+
+      const res = await api.post('/assets/liquid', data, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      return { success: true, message: res.data.message };
+    } catch (err) {
+      console.log('💥 createLiquidAsset error:', err.response?.data);
+      const message =
+        err.response?.data?.message || '자산 등록 중 오류가 발생했습니다.';
+      return { success: false, message };
+    }
+  },
 };
 
 export default AuthService;
