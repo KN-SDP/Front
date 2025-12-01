@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect } from '@react-navigation/native';
 import AuthService from './AuthService';
 
 const showAlert = (title, message) => {
@@ -58,6 +59,11 @@ export default function Motivation({ navigation }) {
     const unsub = navigation.addListener('focus', loadGoals);
     return unsub;
   }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadGoals(); // 화면에 다시 들어올 때마다 목록 새로고침
+    }, [])
+  );
 
   const handleDelete = (goalId) => {
     showConfirm('삭제 확인', '정말 삭제하시겠습니까?', async () => {
@@ -85,36 +91,22 @@ export default function Motivation({ navigation }) {
 
   const renderCard = ({ item }) => {
     const percent = Math.round(item.progressRate * 100);
-
     const image = item.imageUrl || null;
 
-    // 📌 날짜 포맷 (YYYY-MM-DD → YYYY.MM.DD)
-    const startDate = item.createdAt ? item.createdAt.replace(/-/g, '.') : null;
-
-    const endDate = item.deadline ? item.deadline.replace(/-/g, '.') : null;
-
     return (
-      <View style={styles.card}>
-        {/* 이미지 or 기본 박스 */}
-        {image ? (
-          <Image source={{ uri: image }} style={styles.cardImg} />
-        ) : (
-          <View style={[styles.cardImg, { backgroundColor: '#224140' }]} />
-        )}
+      <Pressable
+        style={styles.card}
+        onPress={() =>
+          navigation.navigate('MotivationDetail', { goalId: item.goalId })
+        }
+      >
+        <Image source={image ? { uri: image } : null} style={styles.cardImg} />
 
         <View style={styles.cardInfo}>
           <Text style={styles.cardTitle}>{item.title}</Text>
-
           <Text style={styles.cardMoney}>
             {item.targetAmount.toLocaleString()}원
           </Text>
-
-          {/* 📌 추가: 시작일 ~ 종료일 */}
-          {startDate && endDate && (
-            <Text style={styles.cardPeriod}>
-              {startDate} ~ {endDate}
-            </Text>
-          )}
         </View>
 
         <View style={styles.cardRight}>
@@ -131,7 +123,7 @@ export default function Motivation({ navigation }) {
           />
           <Text style={styles.percentText}>{percent}%</Text>
         </View>
-      </View>
+      </Pressable>
     );
   };
 
@@ -139,9 +131,13 @@ export default function Motivation({ navigation }) {
     const percent = Math.round(item.progressRate * 100);
 
     return (
-      <View style={styles.rowWrapper}>
+      <Pressable
+        style={styles.rowWrapper}
+        onPress={() =>
+          navigation.navigate('MotivationDetail', { goalId: item.goalId })
+        }
+      >
         <View style={styles.rowBackground}>
-          {/* 진행도 그라데이션 */}
           <LinearGradient
             colors={['#1C7C6D', '#3FAF8C']}
             start={{ x: 0, y: 0 }}
@@ -149,7 +145,6 @@ export default function Motivation({ navigation }) {
             style={[styles.rowProgress, { width: `${percent}%` }]}
           />
 
-          {/* 텍스트 */}
           <View style={styles.rowContent}>
             <Text style={styles.rowLabel}>
               {item.title} / {item.targetAmount.toLocaleString()}원
@@ -157,7 +152,7 @@ export default function Motivation({ navigation }) {
             <Text style={styles.rowPercentText}>{percent}%</Text>
           </View>
         </View>
-      </View>
+      </Pressable>
     );
   };
 
@@ -165,7 +160,7 @@ export default function Motivation({ navigation }) {
     <SafeAreaView style={styles.safe}>
       {/* 상단 헤더 */}
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()}>
+        <Pressable onPress={() => navigation.navigate('Home')}>
           <Ionicons name="chevron-back" size={26} color="#BFBFBF" />
         </Pressable>
         <Text style={styles.headerTitle}>목표</Text>
@@ -331,7 +326,7 @@ const TEXT_SUB = '#FFFFFF';
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#001A1D',
+    backgroundColor: '#022326',
   },
 
   header: {

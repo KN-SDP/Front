@@ -12,9 +12,8 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Calendar, LocaleConfig } from 'react-native-calendars';
-import * as ImagePicker from 'expo-image-picker';
 import { useRoute } from '@react-navigation/native';
+import AuthService from './AuthService';
 
 // ===== 공통 Alert =====
 const showAlert = (title, message) => {
@@ -22,199 +21,86 @@ const showAlert = (title, message) => {
   else Alert.alert(title, message);
 };
 
-// ===== 캘린더 한국어 =====
-LocaleConfig.locales['kr'] = {
-  monthNames: [
-    '1월',
-    '2월',
-    '3월',
-    '4월',
-    '5월',
-    '6월',
-    '7월',
-    '8월',
-    '9월',
-    '10월',
-    '11월',
-    '12월',
-  ],
-  monthNamesShort: [
-    '1월',
-    '2월',
-    '3월',
-    '4월',
-    '5월',
-    '6월',
-    '7월',
-    '8월',
-    '9월',
-    '10월',
-    '11월',
-    '12월',
-  ],
-  dayNames: [
-    '일요일',
-    '월요일',
-    '화요일',
-    '수요일',
-    '목요일',
-    '금요일',
-    '토요일',
-  ],
-  dayNamesShort: ['일', '월', '화', '수', '목', '금', '토'],
-};
-LocaleConfig.defaultLocale = 'kr';
-
 export default function EditMotivation({ navigation }) {
   const { params } = useRoute();
   const goal = params?.goal;
 
-  // ===== 초기값 세팅 =====
-  const [imageUri, setImageUri] = useState(goal?.imageUrl || null);
-  const [title, setTitle] = useState(goal?.title || '');
-  const [price, setPrice] = useState(String(goal?.targetAmount || ''));
-  const [startDate, setStartDate] = useState(goal?.startDate || ''); // 서버 없으므로 비워둠
-  const [endDate, setEndDate] = useState(goal?.deadline || '');
+  const [price, setPrice] = useState(
+    goal?.currentAmount ? String(goal.currentAmount) : ''
+  );
 
-  // ===== 이미지 선택 =====
-  const pickImage = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      return showAlert('권한 필요', '사진 접근 권한을 허용해주세요.');
+  // ===== 수정 요청 =====
+  const handleSubmit = async () => {
+    if (!price.trim() || Number(price) < 0) {
+      return showAlert('알림', '금액을 올바르게 입력해주세요.');
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.8,
-    });
+    const currentAmount = Number(price);
 
-    if (!result.canceled) {
-      setImageUri(result.assets[0].uri);
+    const res = await AuthService.updateGoal(goal.goalId, currentAmount);
+
+    if (res.success) {
+      showAlert('완료', '목표 금액이 수정되었습니다!');
+      navigation.navigate('MotivationDetail', {
+        goalId: goal.goalId,
+        updated: true,
+      });
+    } else {
+      showAlert('오류', res.message || '수정 실패');
     }
-  };
-
-  // ===== 날짜 선택 =====
-  const handleDayPress = (day) => {
-    const selected = day.dateString;
-
-    if (!startDate || (startDate && endDate)) {
-      setStartDate(selected);
-      setEndDate('');
-      return;
-    }
-
-    if (!endDate) {
-      if (selected === startDate) {
-        setStartDate('');
-        return;
-      }
-
-      if (selected < startDate) {
-        setStartDate(selected);
-        return;
-      }
-
-      setEndDate(selected);
-    }
-  };
-
-  // ===== 완료 버튼 =====
-  const handleSubmit = () => {
-    showAlert('알림', 'API 연결되면 수정사항을 저장할게!');
   };
 
   return (
     <ScrollView style={styles.container}>
       {/* ===== 상단 헤더 ===== */}
-      <View style={styles.topBar}>
+      <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={28} color="#BFBFBF" />
+          <Ionicons name="chevron-back" size={26} color="#BFBFBF" />
         </Pressable>
-
-        <View style={styles.topRight}>
-          <Pressable style={styles.editBtn}>
-            <Text style={styles.editText}>편집</Text>
-          </Pressable>
-          <Pressable style={styles.deleteBtn}>
-            <Text style={styles.deleteText}>삭제</Text>
-          </Pressable>
-        </View>
+        <Text style={styles.headerTitle}>목표 수정</Text>
       </View>
 
-      {/* ===== 이미지 영역 ===== */}
-      <View style={styles.imageWrap}>
-        {imageUri ? (
-          <Image source={{ uri: imageUri }} style={styles.imagePreview} />
-        ) : (
-          <View style={[styles.imagePreview, { backgroundColor: '#173033' }]} />
-        )}
-
-        <TouchableOpacity style={styles.imageChangeBtn} onPress={pickImage}>
-          <Text style={styles.imageChangeText}>사진 수정하기</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* 구분선 */}
-      <View style={styles.sectionDivider} />
-
-      {/* ===== 이름 ===== */}
-      <Text style={styles.label}>이름</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="수정할 이름을 입력하세요"
-        placeholderTextColor="#607072"
-        value={title}
-        onChangeText={setTitle}
+      {/* ===== 이미지 ===== */}
+      <Image
+        source={{ uri: goal.imageUrl }}
+        style={styles.mainImage}
+        resizeMode="cover"
       />
 
-      {/* ===== 가격 ===== */}
-      <Text style={styles.label}>가격</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="수정할 가격을 입력하세요"
-        placeholderTextColor="#607072"
-        keyboardType="numeric"
-        value={price}
-        onChangeText={setPrice}
-      />
+      {/* ===== 기본 정보 ===== */}
+      <View style={styles.box}>
+        <Text style={styles.label}>이름</Text>
+        <Text style={styles.value}>{goal.title}</Text>
 
-      {/* ===== 기간 ===== */}
-      <View style={styles.dateRow}>
-        <Ionicons name="time-outline" size={20} color="#BFBFBF" />
-        <Text style={styles.dateLabel}>제한 기간</Text>
+        <Text style={styles.label}>목표 금액</Text>
+        <Text style={styles.value}>{goal.targetAmount.toLocaleString()}원</Text>
+
+        <Text style={styles.label}>기간</Text>
+        <Text style={styles.value}>{goal.deadline}</Text>
+
+        <Text style={styles.label}>현재 달성률</Text>
+        <Text style={styles.value}>
+          {Math.round((goal.progressRate || 0) * 100)}%
+        </Text>
       </View>
 
-      <View style={styles.dateSelectRow}>
-        <Text style={styles.dateText}>{startDate || '2025.xx.xx'}</Text>
-        <Text style={styles.dateArrow}>→</Text>
-        <Text style={styles.dateText}>{endDate || '2025.xx.xx'}</Text>
-      </View>
+      {/* ===== 수정 가능한 금액 ===== */}
+      <View style={styles.editBox}>
+        <Text style={styles.editLabel}>현재 누적 금액 수정</Text>
 
-      {/* ===== 캘린더 ===== */}
-      <Calendar
-        onDayPress={handleDayPress}
-        markedDates={{
-          ...(startDate && {
-            [startDate]: { selected: true, selectedColor: '#3C7363' },
-          }),
-          ...(endDate && {
-            [endDate]: { selected: true, selectedColor: '#6DC2B3' },
-          }),
-        }}
-        theme={{
-          backgroundColor: '#001A1D',
-          calendarBackground: '#001A1D',
-          dayTextColor: '#BFBFBF',
-          monthTextColor: '#BFBFBF',
-          arrowColor: '#6DC2B3',
-          todayTextColor: '#6DC2B3',
-        }}
-        style={styles.calendar}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="수정할 금액 입력"
+          placeholderTextColor="#607072"
+          keyboardType="numeric"
+          value={price}
+          onChangeText={setPrice}
+        />
+      </View>
 
       {/* ===== 완료 버튼 ===== */}
       <TouchableOpacity style={styles.finishButton} onPress={handleSubmit}>
-        <Text style={styles.finishButtonText}>완료</Text>
+        <Text style={styles.finishButtonText}>수정 완료</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -224,120 +110,78 @@ export default function EditMotivation({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#001A1D',
-    paddingHorizontal: 18,
+    backgroundColor: '#022326',
   },
 
-  /* ===== Top bar ===== */
-  topBar: {
-    paddingVertical: 18,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  topRight: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    padding: 16,
+    gap: 10,
   },
-  editBtn: {},
-  editText: {
-    color: '#BFBFBF',
-    fontSize: 15,
-  },
-  deleteBtn: {},
-  deleteText: {
-    color: '#FF5C5C',
-    fontSize: 15,
+  headerTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
   },
 
-  /* ===== 이미지 ===== */
-  imageWrap: {
+  mainImage: {
     width: '100%',
-    alignItems: 'center',
+    height: 260,
+  },
+
+  box: {
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    backgroundColor: '#022C2C',
+    marginTop: 14,
+  },
+
+  label: {
+    color: '#8FA5A3',
+    fontSize: 14,
     marginTop: 10,
   },
-  imagePreview: {
-    width: '100%',
-    height: 300,
-    borderRadius: 12,
-  },
-  imageChangeBtn: {
-    position: 'absolute',
-    bottom: 14,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    paddingVertical: 8,
-    paddingHorizontal: 18,
-    borderRadius: 12,
-  },
-  imageChangeText: {
+  value: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 16,
+    marginTop: 4,
   },
 
-  sectionDivider: {
-    height: 1,
-    backgroundColor: '#173033',
-    marginVertical: 26,
+  editBox: {
+    paddingHorizontal: 18,
+    paddingVertical: 20,
+    backgroundColor: '#022C2C',
+    marginTop: 16,
   },
 
-  /* ===== 기본 입력 ===== */
-  label: {
-    color: '#BFBFBF',
-    fontSize: 15,
-    marginBottom: 6,
+  editLabel: {
+    color: '#fff',
+    fontSize: 16,
+    marginBottom: 10,
+    fontWeight: '600',
   },
+
   input: {
     borderBottomWidth: 1,
     borderBottomColor: '#2F4C4C',
     paddingVertical: 10,
-    fontSize: 15,
+    fontSize: 18,
     color: '#fff',
-    marginBottom: 20,
-  },
-
-  /* ===== 날짜 ===== */
-  dateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 6,
-  },
-  dateLabel: {
-    marginLeft: 10,
-    color: '#BFBFBF',
-    fontSize: 15,
-  },
-  dateSelectRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 12,
-  },
-  dateText: {
-    color: '#BFBFBF',
-    fontSize: 16,
-  },
-  dateArrow: {
-    marginHorizontal: 18,
-    color: '#BFBFBF',
-    fontSize: 16,
-  },
-
-  calendar: {
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginBottom: 30,
   },
 
   finishButton: {
+    marginTop: 30,
     backgroundColor: '#173033',
-    paddingVertical: 14,
+    paddingVertical: 16,
     borderRadius: 16,
     alignItems: 'center',
+    marginHorizontal: 18,
     marginBottom: 40,
   },
   finishButtonText: {
     color: '#BFBFBF',
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
   },
 });

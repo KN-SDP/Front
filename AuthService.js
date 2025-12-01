@@ -296,12 +296,44 @@ const AuthService = {
       return { success: false, message: '네트워크 오류' };
     }
   },
+  /** 목표 상세 조회 */
+  async getGoalDetail(goalId) {
+    try {
+      const token = await AsyncStorage.getItem(TOKEN_KEY);
+      if (!token) {
+        return { success: false, message: '로그인이 필요합니다.' };
+      }
+
+      const res = await api.get(`/goals/${goalId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      return {
+        success: true,
+        data: res.data,
+      };
+    } catch (err) {
+      console.log('❌ getGoalDetail error:', err.response?.data || err);
+
+      return {
+        success: false,
+        message: err.response?.data?.message || '상세 조회 실패',
+      };
+    }
+  },
+
   // 목표 삭제
   async deleteGoal(goalId) {
     try {
-      const res = await api.delete(`/goals/${goalId}`);
+      const token = await AsyncStorage.getItem('accessToken');
+      if (!token) return { success: false, message: '로그인이 필요합니다.' };
 
-      // 204 No Content ➜ data 없을 가능성 있음
+      const res = await api.delete(`/goals/${goalId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
       return {
         success: true,
         message: res.data?.message || '목표가 삭제되었습니다.',
@@ -316,6 +348,30 @@ const AuthService = {
       };
     }
   },
+  // 목표 금액 수정(PATCH)
+  async updateGoal(goalId, currentAmount) {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      if (!token) return { success: false, message: '로그인이 필요합니다.' };
+
+      const res = await api.patch(
+        `/goals/${goalId}`,
+        { currentAmount }, // 🔥 price -> currentAmount
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      return { success: true, data: res.data };
+    } catch (err) {
+      const data = err.response?.data;
+      console.error('updateGoal Error:', data || err.message);
+
+      return {
+        success: false,
+        message: data?.message || '수정 중 오류가 발생했습니다.',
+      };
+    }
+  },
+
   // ✅ 지출/수입 내역 추가
   async createExpense(payload) {
     try {

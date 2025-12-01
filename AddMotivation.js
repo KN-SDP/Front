@@ -10,6 +10,7 @@ import {
   Image,
   Alert,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
@@ -261,7 +262,7 @@ export default function AddMotivation({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#001A1D',
+    backgroundColor: '#022326',
     paddingHorizontal: 18,
   },
 

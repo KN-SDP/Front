@@ -27,6 +27,7 @@ import SetAlarm from './SetAlarm';
 import Secession from './Secession';
 import LoginResetPw from './LoginResetPw';
 import EditMotivation from './EditMotivation';
+import MotivationDetail from './MotivationDetail';
 
 const Stack = createNativeStackNavigator();
 
@@ -181,6 +182,7 @@ export default function App() {
         <Stack.Screen name="Secession" component={Secession} />
         <Stack.Screen name="LoginResetPw" component={LoginResetPw} />
         <Stack.Screen name="EditMotivation" component={EditMotivation} />
+        <Stack.Screen name="MotivationDetail" component={MotivationDetail} />
       </Stack.Navigator>
     </NavigationContainer>
   );

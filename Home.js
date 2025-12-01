@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Linking } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import AuthService from './AuthService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -84,6 +85,11 @@ export default function Home({ navigation }) {
       console.error('목표 불러오기 실패:', err);
     }
   };
+  useFocusEffect(
+    React.useCallback(() => {
+      loadGoals(); // 목표, 지출, 달성률 등 여러 데이터
+    }, [])
+  );
 
   const loadMonthTotal = async () => {
     const now = new Date();
@@ -279,7 +285,15 @@ export default function Home({ navigation }) {
               contentContainerStyle={styles.goalScrollInner}
             >
               {goals.map((item) => (
-                <View key={item.goalId} style={styles.goalCard}>
+                <Pressable
+                  key={item.goalId}
+                  style={styles.goalCard}
+                  onPress={() =>
+                    navigation.navigate('MotivationDetail', {
+                      goalId: item.goalId,
+                    })
+                  }
+                >
                   {item.imageUrl ? (
                     <Image
                       source={{ uri: item.imageUrl }}
@@ -311,7 +325,7 @@ export default function Home({ navigation }) {
                       </Text>
                     ) : null}
                   </View>
-                </View>
+                </Pressable>
               ))}
 
               {/* + 버튼 카드 */}
