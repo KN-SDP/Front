@@ -82,7 +82,7 @@ export default function App() {
       setPendingRegister({
         email: decoded.email,
         username: decoded.name,
-        socialNickname: decoded.providerId,
+        socialNickname: `${decoded.provider}_${decoded.providerId}`,
         provider: decoded.provider,
       });
     }
