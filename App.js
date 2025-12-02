@@ -114,7 +114,7 @@ export default function App() {
     navigationRef.current.navigate('SignUp', {
       socialEmail: pendingRegister.email,
       socialName: pendingRegister.username,
-      socialNickname: pendingRegister.SocialNickname,
+      socialNickname: pendingRegister.socialNickname,
       socialProvider: pendingRegister.provider,
     });
 
