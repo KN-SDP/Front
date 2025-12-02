@@ -82,7 +82,8 @@ export default function App() {
       setPendingRegister({
         email: decoded.email,
         username: decoded.name,
-        nickname: decoded.providerId,
+        socialNickname: decoded.providerId,
+        provider: decoded.provider,
       });
     }
 
@@ -113,7 +114,8 @@ export default function App() {
     navigationRef.current.navigate('SignUp', {
       socialEmail: pendingRegister.email,
       socialName: pendingRegister.username,
-      socialNickname: pendingRegister.nickname,
+      socialNickname: pendingRegister.SocialNickname,
+      socialProvider: pendingRegister.provider,
     });
 
     // URL 초기화
